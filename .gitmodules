@@ -1,0 +1,6 @@
+[submodule "external/ArmyAnt.Net"]
+	path = external/ArmyAnt.Net
+	url = https://github.com/Army-Ant/ArmyAnt.Net
+[submodule "res"]
+	path = res
+	url = https://github.com/Army-Ant/ArmyAntServerResources.git
