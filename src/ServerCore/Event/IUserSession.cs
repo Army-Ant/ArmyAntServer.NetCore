@@ -28,7 +28,7 @@ namespace ArmyAnt.Server.Event {
         long UserId { get; }
         SessionStatus SessionStatus { get; }
         void OnLocalEvent<T>(int code, T data) where T: LocalEventArg;
-        void OnNetworkMessage(int code, CustomMessage data) ;
+        void OnNetworkMessage(int code, CustomMessageReceived data) ;
     }
 
     public abstract class AUserSession : IUserSession {
@@ -52,13 +52,13 @@ namespace ArmyAnt.Server.Event {
         #region Abstract interface functions
 
         public abstract void OnLocalEvent<T>(int code, T data) where T : LocalEventArg;
-        public abstract void OnNetworkMessage(int code, CustomMessage data);
+        public abstract void OnNetworkMessage(int code, CustomMessageReceived data);
         public abstract void OnUnknownEvent<T>(int _event, params T[] data);
 
         public void OnTask<Input>(int _event, params Input[] data) {
             if(data[0] is LocalEventArg local) {
                 OnLocalEvent(_event, local);
-            } else if(data[0] is CustomMessage net) {
+            } else if(data[0] is CustomMessageReceived net) {
                 OnNetworkMessage(_event, net);
             } else if(data[0] is int user && data.Length == 2 && data[1] is int check && check == 0) {
                 switch((SpecialEvent)_event) {

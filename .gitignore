@@ -330,4 +330,4 @@ ASALocalRun/
 .mfractor/
 
 # 
-src/ProtoRes/*.cs
+src/ProtoRes/res

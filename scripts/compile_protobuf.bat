@@ -5,7 +5,7 @@ cd ..
 set PROTOC_PATH=external\protobuf\bin
 set PROTOFILE_PATH=res\proto
 set PROTOSRC_BASE=bin\ProtobufSource
-set PROTOSRC_SERVER=src\ProtoRes
+set PROTOSRC_SERVER=src\ProtoRes\res
 
 set PROTOCPP_PATH=%PROTOSRC_BASE%\cpp
 set PROTOCSHARP_PATH=%PROTOSRC_BASE%\csharp
@@ -39,6 +39,7 @@ if not exist %PROTORUBY_PATH% (mkdir %PROTORUBY_PATH%)
 if not exist %PROTOBINARY_PATH% (mkdir %PROTOBINARY_PATH%)
 if not exist %EXECUTE_BINARY% (mkdir %EXECUTE_BINARY%)
 if not exist %PROTOCOMMONJS_PATH% (mkdir %PROTOCOMMONJS_PATH%)
+if not exist %PROTOSRC_SERVER% (mkdir %PROTOSRC_SERVER%)
 
 :execute_protoc
 %PROTOC_PATH%\protoc.exe -I=%PROTOFILE_PATH% --cpp_out=%PROTOCPP_PATH% --csharp_out=%PROTOCSHARP_PATH% --js_out=library=aaserver_proto,binary:%PROTOJAVASCRIPT_PATH% --python_out=%PROTOPYTHON_PATH% %PROTOFILES% %PROTODBPROXYFILES%

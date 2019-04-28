@@ -5,7 +5,7 @@ using static ArmyAnt.Utilities;
 namespace ArmyAnt.Server.Event {
     #region delegates
     public delegate bool OnKeyNotFoundLocalEvent(int _event, LocalEventArg data);
-    public delegate void OnKeyNotFoundNetworkMessage(int _event, CustomMessage us);
+    public delegate void OnKeyNotFoundNetworkMessage(int _event, CustomMessageReceived us);
     public delegate void OnUnknownEvent(int _event, Type arrayType, params object[] data);
     #endregion
 
@@ -31,7 +31,7 @@ namespace ArmyAnt.Server.Event {
                 } catch(KeyNotFoundException) {
                     OnKeyNotFoundLocalEvent(_event, local);
                 }
-            } else if(data[0] is CustomMessage net) {
+            } else if(data[0] is CustomMessageReceived net) {
                 try {
                     networkEventPool[_event]?.Invoke(_event, net);
                 } catch(KeyNotFoundException) {
@@ -123,31 +123,29 @@ namespace ArmyAnt.Server.Event {
 
         #region Network message
 
-        public void AddNetworkMessageListener(int code, Action<int, CustomMessage> _event) {
+        public void AddNetworkMessageListener(int code, Action<int, CustomMessageReceived> _event) {
             IsNotNull(_event);
             lock(networkEventPool) {
                 try {
                     var tar = networkEventPool[code];
                     tar.Add(_event);
                 } catch(KeyNotFoundException) {
-                    var tar = new EventGroup<CustomMessage>();
+                    var tar = new EventGroup<CustomMessageReceived>();
                     tar.Add(_event);
                     networkEventPool.Add(code, tar);
                 }
             }
         }
-        public void RemoveNetworkMessageListener(int code, Action<int, CustomMessage> _event) {
+        public void RemoveNetworkMessageListener(int code, Action<int, CustomMessageReceived> _event) {
             IsNotNull(_event);
             lock(networkEventPool) {
                 networkEventPool[code].Remove(_event);
             }
         }
-        public bool DispatchNetworkMessage(int code, CustomMessage data) => taskPool.EnqueueTaskTo(selfId, code, data);
-        public bool DispatchNetworkMessage(int code, long userId, CustomMessage data) => taskPool.EnqueueTaskTo(userId, code, data);
+        public bool DispatchNetworkMessage(int code, CustomMessageReceived data) => taskPool.EnqueueTaskTo(selfId, code, data);
+        public bool DispatchNetworkMessage(int code, long userId, CustomMessageReceived data) => taskPool.EnqueueTaskTo(userId, code, data);
 
         #endregion
-
-        public static int GetNetworkMessageCode<T>(T msg) where T : Google.Protobuf.IMessage => msg.Descriptor.CustomOptions.TryGetInt32(50001, out int code) ? code : 0;
 
         #region Events
         public event OnUserSessionLogin OnUserSessionLogin;
@@ -174,6 +172,6 @@ namespace ArmyAnt.Server.Event {
         private readonly long selfId;
         private readonly Thread.TaskPool<int> taskPool = new Thread.TaskPool<int>();
         private readonly IDictionary<int, EventGroup<LocalEventArg>> localEventPool = new Dictionary<int, EventGroup<LocalEventArg>>();
-        private readonly IDictionary<int, EventGroup<CustomMessage>> networkEventPool = new Dictionary<int, EventGroup<CustomMessage>>();
+        private readonly IDictionary<int, EventGroup<CustomMessageReceived>> networkEventPool = new Dictionary<int, EventGroup<CustomMessageReceived>>();
     }
 }

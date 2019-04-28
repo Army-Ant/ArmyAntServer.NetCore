@@ -7,3 +7,4 @@
 [submodule "external/protobuf"]
 	path = external/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
+	ignore = dirty

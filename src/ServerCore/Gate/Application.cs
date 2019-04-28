@@ -9,16 +9,16 @@ namespace ArmyAnt.Server.Gate {
     public sealed class Application : IApplication {
         public Event.EventManager EventManager { get; private set; }
 
-        public Application(params string[] loggerFile) {
-            CommonInitial(loggerFile);
+        public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
+            CommonInitial(consoleLevel, fileLevel, loggerFile);
             dbProxy = new SocketTcpClient() {
                 OnClientReceived = OnDBProxyReceived,
                 OnTcpClientDisonnected = OnDBProxyDisconnected
             };
         }
 
-        public Application(IPEndPoint dbProxyLocal, params string[] loggerFile) {
-            CommonInitial(loggerFile);
+        public Application(IPEndPoint dbProxyLocal, Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
+            CommonInitial(consoleLevel, fileLevel, loggerFile);
             dbProxy = new SocketTcpClient(dbProxyLocal) {
                 OnClientReceived = OnDBProxyReceived,
                 OnTcpClientDisonnected = OnDBProxyDisconnected
@@ -47,7 +47,9 @@ namespace ArmyAnt.Server.Gate {
             udpListener.Stop();
             EventManager.ClearUserSession();
             tcpSocketUserList.Clear();
+            tcpSocketIndexList.Clear();
             webSocketUserList.Clear();
+            webSocketIndexList.Clear();
         }
 
         public async Task<int> AwaitAll() {
@@ -78,15 +80,46 @@ namespace ArmyAnt.Server.Gate {
             dbProxy.Stop();
         }
 
-        public void Log(LogLevel lv, string Tag, params object[] content) {
-            logger.WriteLine("[ ", System.DateTime.Now.ToString(), " ] [ ", lv, " ] [ ", Tag, " ] ", content);
+        public void Log(Logger.LogLevel lv, string Tag, params object[] content) {
+            logger.WriteLine(lv, " [ ", Tag, " ] ", content);
         }
 
-        private void CommonInitial(params string[] loggerFile) {
+        public void Send<T>(NetworkType type, long userId, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage {
+            int index = 0;
+            byte[] sending;
+            switch(type) {
+                case NetworkType.Tcp:
+                    lock(tcpSocketIndexList) {
+                        if(!tcpSocketIndexList.ContainsKey(userId)) {
+                            Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending TCP message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
+                            return;
+                        }
+                        index = tcpSocketIndexList[userId];
+                    }
+                    sending = CustomMessageSend<T>.PackMessage(conversationStepIndex, msg);
+                    sendingTasks.Add(tcpServer.Send(index, sending));
+                    break;
+                case NetworkType.Websocket:
+                    lock(webSocketIndexList) {
+                        if(!webSocketIndexList.ContainsKey(userId)) {
+                            if(!webSocketIndexList.ContainsKey(userId)) {
+                                Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending Websocket message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
+                                return;
+                            }
+                            index = webSocketIndexList[userId];
+                        }
+                    }
+                    sending = CustomMessageSend<T>.PackMessage(conversationStepIndex, msg);
+                    sendingTasks.Add(httpServer.Send(index, sending));
+                    break;
+            }
+        }
+
+        private void CommonInitial(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
             EventManager = new Event.EventManager(this);
-            logger = new Logger(true);
+            logger = new Logger(true, consoleLevel);
             this.loggerFile = Logger.CreateLoggerFileStream(loggerFile);
-            logger.AddStream(this.loggerFile);
+            logger.AddStream(this.loggerFile, fileLevel, true);
             tcpServer = new SocketTcpServer {
                 OnTcpServerConnected = OnTcpServerConnected,
                 OnTcpServerDisonnected = OnTcpServerDisonnected,
@@ -106,12 +139,15 @@ namespace ArmyAnt.Server.Gate {
         private bool OnTcpServerConnected(int index, IPEndPoint point) {
             lock(tcpSocketUserList) {
                 if(tcpSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "New TCP client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "New TCP client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
                 } else {
                     var user = new User(EventManager, NetworkType.Tcp);
-                    Log(LogLevel.Verbose, LOGGER_TAG, "New TCP client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
-                    tcpSocketUserList.Add(index, user.UserId);
+                    Log(Logger.LogLevel.Verbose, LOGGER_TAG, "New TCP client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
+                    lock(tcpSocketIndexList) {
+                        tcpSocketUserList.Add(index, user.UserId);
+                        tcpSocketIndexList.Add(user.UserId, index);
+                    }
                     EventManager.SetSessionOnline(user.UserId);
                     return true;
                 }
@@ -121,14 +157,17 @@ namespace ArmyAnt.Server.Gate {
         private void OnTcpServerDisonnected(int index) {
             lock(tcpSocketUserList) {
                 if(tcpSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "Detected a TCP client disconnected , but no session record here");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a TCP client disconnected , but no session record here");
                 } else {
-                    Log(LogLevel.Verbose, LOGGER_TAG, "A TCP client disconnected");
+                    Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A TCP client disconnected");
                 }
-                long userSession = tcpSocketUserList[index];
-                EventManager.SetSessionLogout(userSession);
-                EventManager.RemoveUserSession(userSession).Wait();
-                tcpSocketUserList.Remove(index);
+                lock(tcpSocketIndexList) {
+                    long userSession = tcpSocketUserList[index];
+                    EventManager.SetSessionLogout(userSession);
+                    EventManager.RemoveUserSession(userSession).Wait();
+                    tcpSocketUserList.Remove(index);
+                    tcpSocketIndexList.Remove(userSession);
+                }
             }
         }
 
@@ -136,12 +175,12 @@ namespace ArmyAnt.Server.Gate {
             long userId;
             lock(tcpSocketUserList) {
                 if(!tcpSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "Detected a TCP message , but no session record here!");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a TCP message , but no session record here!");
                     return;
                 }
                 userId = tcpSocketUserList[index];
             }
-            var msg = ParseMessage(data);
+            var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
         }
 
@@ -152,12 +191,15 @@ namespace ArmyAnt.Server.Gate {
         private bool OnWebsocketServerConnected(int index, IPEndPoint point) {
             lock(webSocketUserList) {
                 if(webSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "New Websocket client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "New Websocket client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
                 } else {
                     var user = new User(EventManager, NetworkType.Websocket);
-                    Log(LogLevel.Verbose, LOGGER_TAG, "New Websocket client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
-                    webSocketUserList.Add(index, user.UserId);
+                    Log(Logger.LogLevel.Verbose, LOGGER_TAG, "New Websocket client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
+                    lock(webSocketUserList) {
+                        webSocketUserList.Add(index, user.UserId);
+                        webSocketIndexList.Add(user.UserId, index);
+                    }
                     EventManager.SetSessionOnline(user.UserId);
                     return true;
                 }
@@ -167,14 +209,17 @@ namespace ArmyAnt.Server.Gate {
         private void OnWebsocketServerDisonnected(int index) {
             lock(webSocketUserList) {
                 if(webSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "Detected a Websocket client disconnected , but no session record here");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a Websocket client disconnected , but no session record here");
                 } else {
-                    Log(LogLevel.Verbose, LOGGER_TAG, "A Websocket client disconnected");
+                    Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A Websocket client disconnected");
                 }
-                long userSession = webSocketUserList[index];
-                EventManager.SetSessionLogout(userSession);
-                EventManager.RemoveUserSession(userSession).Wait();
-                webSocketUserList.Remove(index);
+                lock(webSocketUserList) {
+                    long userSession = webSocketUserList[index];
+                    EventManager.SetSessionLogout(userSession);
+                    EventManager.RemoveUserSession(userSession).Wait();
+                    webSocketUserList.Remove(index);
+                    webSocketIndexList.Remove(userSession);
+                }
             }
         }
 
@@ -182,12 +227,12 @@ namespace ArmyAnt.Server.Gate {
             long userId;
             lock(webSocketUserList) {
                 if(!webSocketUserList.ContainsKey(index)) {
-                    Log(LogLevel.Error, LOGGER_TAG, "Detected a Websocket message , but no session record here!");
+                    Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a Websocket message , but no session record here!");
                     return;
                 }
                 userId = webSocketUserList[index];
             }
-            var msg = ParseMessage(data);
+            var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
         }
 
@@ -195,29 +240,10 @@ namespace ArmyAnt.Server.Gate {
 
         private void OnDBProxyDisconnected() { /* TODO */ }
 
-        private CustomMessage ParseMessage(byte[] data) {
-            var head = new MessageBaseHead(data);
-            switch(head.extendVersion) {
-                case 1:
-                    var msg = ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1.Parser.ParseFrom(data, 16, head.extendLength);
-                    return new CustomMessage {
-                        head = head,
-                        appid = msg.AppId,
-                        contentLength = msg.ContentLength,
-                        messageCode = msg.MessageCode,
-                        conversationCode = msg.ConversationCode,
-                        conversationStepIndex = msg.ConversationStepIndex,
-                        conversationStepType = msg.ConversationStepType,
-                        body = data.Skip(16+head.extendLength).ToArray(),
-                    };
-            }
-            return default;
-        }
-
-        private void OnMessage(long userId, CustomMessage msg) {
-            Log(LogLevel.Verbose, LOGGER_TAG, "Received from client id: ", userId, ", appid: " + msg.appid);
+        private void OnMessage(long userId, CustomMessageReceived msg) {
+            Log(Logger.LogLevel.Verbose, LOGGER_TAG, "Received from client id: ", userId, ", appid: " + msg.appid);
             if(!EventManager.IsUserIn(userId)) {
-                Log(LogLevel.Warning, LOGGER_TAG, "Cannot find the user session: ", userId, " when resolving the message");
+                Log(Logger.LogLevel.Warning, LOGGER_TAG, "Cannot find the user session: ", userId, " when resolving the message");
                 return;
             }
             EventManager.DispatchNetworkMessage(msg.messageCode, userId, msg);
@@ -233,6 +259,9 @@ namespace ArmyAnt.Server.Gate {
         private Logger logger;
 
         private IDictionary<int, long> tcpSocketUserList = new Dictionary<int, long>();
+        private IDictionary<long, int> tcpSocketIndexList = new Dictionary<long, int>();
         private IDictionary<int, long> webSocketUserList = new Dictionary<int, long>();
+        private IDictionary<long, int> webSocketIndexList = new Dictionary<long, int>();
+        private IList<Task> sendingTasks = new List<Task>();
     }
 }

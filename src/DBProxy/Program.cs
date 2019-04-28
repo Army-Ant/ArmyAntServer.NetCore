@@ -1,6 +1,7 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 
-namespace ArmyAnt.Server {
+namespace ArmyAnt.Server.DBProxy {
     static class Program {
         public enum ReturnCode {
             //ServerStartFailed = -5,
@@ -20,20 +21,19 @@ namespace ArmyAnt.Server {
         [System.Serializable]
         private struct Config {
             public bool debug;
-            public ushort normalSocketPort;
-            public ushort udpSocketPort;
-            public ushort websocketPort;
+            public ushort port;
             public string logPath;
             public string logFileLevel;
-            public string logConsoleLevel;
-            public string dbProxyAddr;
-            public ushort dbProxyPort;
+            public string logConsoleLevel; // TODO: 未实现
+            public string mysqlServerHost;
+            public string mysqlUsername;
+            public string mysqlPassword;
         }
 #pragma warning restore CS0649
 
-        private const string CONFIG_FILE = "../res/ConfigJson/ServerMainConfig.json";
+        private const string CONFIG_FILE = "../res/ConfigJson/DBProxyConfig.json";
 
-        private static int ReturnCodeToInt(ReturnCode code) => System.Convert.ToInt32(code);
+        private static int ReturnCodeToInt(ReturnCode code) => Convert.ToInt32(code);
 
         private static int Main(params string[] arg) {
             // Parse config json file
@@ -42,11 +42,10 @@ namespace ArmyAnt.Server {
             if(ser.ReadObject(jsonFile) is Config config) {
                 jsonFile.Close();
                 // Start server
-                var serverGate = new Gate.Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
-                serverGate.ConnectDBProxy(config.dbProxyAddr, config.dbProxyPort);
-                serverGate.Start(new IPEndPoint(IPAddress.Any, config.normalSocketPort), new IPEndPoint(IPAddress.Any, config.udpSocketPort), "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketPort + "/", "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketPort + "/");
+                var proxy = new Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
+                proxy.Start(new IPEndPoint(IPAddress.Any, config.port));
                 // Wait for server ending
-                return serverGate.AwaitAll().Result;
+                return proxy.AwaitAll().Result;
             }
             jsonFile.Close();
             return ReturnCodeToInt(ReturnCode.ParseConfigJsonFailed);
