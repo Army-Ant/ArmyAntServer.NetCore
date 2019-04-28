@@ -9,8 +9,11 @@ namespace ArmyAnt.Server.DBProxy {
 
         public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
             logger = new Logger(true, consoleLevel);
-            this.loggerFile = Logger.CreateLoggerFileStream(loggerFile);
-            logger.AddStream(this.loggerFile, fileLevel, true);
+            foreach(var i in loggerFile) {
+                var file = Logger.CreateLoggerFileStream(i);
+                this.loggerFile.Add(file);
+                logger.AddStream(file, fileLevel, true);
+            }
             tcpServer = new SocketTcpServer {
                 OnTcpServerConnected = OnTcpServerConnected,
                 OnTcpServerDisonnected = OnTcpServerDisonnected,
@@ -19,8 +22,10 @@ namespace ArmyAnt.Server.DBProxy {
         }
 
         ~Application() {
-            logger.RemoveStream(loggerFile);
-            loggerFile.Close();
+            foreach(var i in loggerFile) {
+                logger.RemoveStream(i);
+                i.Close();
+            }
             try {
                 Stop();
             } catch(System.Net.Sockets.SocketException) {
@@ -29,25 +34,31 @@ namespace ArmyAnt.Server.DBProxy {
 
         public void Start(IPEndPoint tcp) {
             tcpServer.Start(tcp);
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy started");
         }
 
         public void Stop() {
             tcpServer.Stop();
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy stopped");
         }
 
         public async Task<int> AwaitAll() {
             var (tcpMainTask, allTask) = tcpServer.WaitingTask;
-            allTask.Add(tcpMainTask);
-            await Task.WhenAll(allTask);
+            if(tcpMainTask != null) {
+                allTask.Add(tcpMainTask);
+            }
+            if(allTask.Count > 0) {
+                await Task.WhenAll(allTask);
+            }
             return 0;
         }
 
         public void Log(Logger.LogLevel lv, string Tag, params object[] content) {
-            logger.WriteLine(lv, "[ ", System.DateTime.Now.ToString(), " ] [ ", lv, " ] [ ", Tag, " ] ", content);
+            logger.WriteLine(lv, "[ ", Tag, " ] ", content);
         }
 
         public void Send<T>(NetworkType type, int index, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage {
-            var sending = CustomMessageSend < T >.PackMessage(conversationStepIndex, msg);
+            var sending = CustomMessageSend <T>.PackMessage(conversationStepIndex, msg);
             sendingTasks.Add(tcpServer.Send(index, sending));
         }
 
@@ -63,13 +74,14 @@ namespace ArmyAnt.Server.DBProxy {
 
         private void OnTcpServerReceived(int index, byte[] data) {
             var msg = CustomMessageReceived.ParseMessage(data);
+            Log(Logger.LogLevel.Verbose, LOGGER_TAG, "Received from client index: " , index, ", appid: ", msg.appid);
             // TODO: resolve
         }
 
-        private const string LOGGER_TAG = "Server Main";
+        private const string LOGGER_TAG = "DBProxy Main";
 
         private SocketTcpServer tcpServer;
-        private System.IO.FileStream loggerFile;
+        private IList<System.IO.FileStream> loggerFile = new List<System.IO.FileStream>();
         private Logger logger;
         private IList<Task> sendingTasks = new List<Task>();
     }

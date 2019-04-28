@@ -11,6 +11,7 @@ namespace ArmyAnt.Server.Gate {
 
         public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
             CommonInitial(consoleLevel, fileLevel, loggerFile);
+            dbPosLocal = null;
             dbProxy = new SocketTcpClient() {
                 OnClientReceived = OnDBProxyReceived,
                 OnTcpClientDisonnected = OnDBProxyDisconnected
@@ -19,6 +20,7 @@ namespace ArmyAnt.Server.Gate {
 
         public Application(IPEndPoint dbProxyLocal, Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
             CommonInitial(consoleLevel, fileLevel, loggerFile);
+            dbPosLocal = dbProxyLocal;
             dbProxy = new SocketTcpClient(dbProxyLocal) {
                 OnClientReceived = OnDBProxyReceived,
                 OnTcpClientDisonnected = OnDBProxyDisconnected
@@ -26,8 +28,10 @@ namespace ArmyAnt.Server.Gate {
         }
 
         ~Application() {
-            logger.RemoveStream(loggerFile);
-            loggerFile.Close();
+            foreach(var i in loggerFile) {
+                logger.RemoveStream(i);
+                i.Close();
+            }
             try {
                 Stop();
             } catch(System.Net.Sockets.SocketException) {
@@ -38,6 +42,7 @@ namespace ArmyAnt.Server.Gate {
             udpListener.Start(udp);
             tcpServer.Start(tcp);
             httpServer.Start(http);
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "Server started");
         }
 
         public void Stop() {
@@ -50,6 +55,7 @@ namespace ArmyAnt.Server.Gate {
             tcpSocketIndexList.Clear();
             webSocketUserList.Clear();
             webSocketIndexList.Clear();
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "Server stopped");
         }
 
         public async Task<int> AwaitAll() {
@@ -69,15 +75,34 @@ namespace ArmyAnt.Server.Gate {
         }
 
         public void ConnectDBProxy(string dbProxyAddr, ushort dbProxyPort) {
-            this.dbProxy.Connect(IPAddress.Parse(dbProxyAddr), dbProxyPort);
+            try {
+                dbProxy.Connect(IPAddress.Parse(dbProxyAddr), dbProxyPort);
+                dbPos = dbProxy.ServerIPEndPoint;
+            }catch(System.Net.Sockets.SocketException e) {
+                Log(System.Text.Encoding.Default, Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
+                ConnectDBProxy(dbProxyAddr, dbProxyPort);
+            }
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
         }
 
         public void ConnectDBProxy(IPEndPoint dbProxy) {
-            this.dbProxy.Connect(dbProxy);
-        }
+            try {
+                this.dbProxy.Connect(dbProxy);
+                dbPos = this.dbProxy.ServerIPEndPoint;
+            } catch(System.Net.Sockets.SocketException e) {
+                Log(Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
+                ConnectDBProxy(dbProxy);
+            }
+    Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+}
 
         public void DisconnectDBProxy() {
             dbProxy.Stop();
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy over");
+        }
+
+        public void Log(System.Text.Encoding encoding, Logger.LogLevel lv, string Tag, params object[] content) {
+            logger.WriteLine(encoding, lv, " [ ", Tag, " ] ", content);
         }
 
         public void Log(Logger.LogLevel lv, string Tag, params object[] content) {
@@ -118,8 +143,11 @@ namespace ArmyAnt.Server.Gate {
         private void CommonInitial(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
             EventManager = new Event.EventManager(this);
             logger = new Logger(true, consoleLevel);
-            this.loggerFile = Logger.CreateLoggerFileStream(loggerFile);
-            logger.AddStream(this.loggerFile, fileLevel, true);
+            foreach(var i in loggerFile) {
+                var file = Logger.CreateLoggerFileStream(i);
+                this.loggerFile.Add(file);
+                logger.AddStream(file, fileLevel, true);
+            }
             tcpServer = new SocketTcpServer {
                 OnTcpServerConnected = OnTcpServerConnected,
                 OnTcpServerDisonnected = OnTcpServerDisonnected,
@@ -238,7 +266,21 @@ namespace ArmyAnt.Server.Gate {
 
         private void OnDBProxyReceived(IPEndPoint ep, byte[] data) {  /* TODO */}
 
-        private void OnDBProxyDisconnected() { /* TODO */ }
+        private void OnDBProxyDisconnected() {
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy server lost!");
+            if(dbPosLocal == null) {
+                dbProxy = new SocketTcpClient() {
+                    OnClientReceived = OnDBProxyReceived,
+                    OnTcpClientDisonnected = OnDBProxyDisconnected
+                };
+            } else {
+                dbProxy = new SocketTcpClient(dbPosLocal) {
+                    OnClientReceived = OnDBProxyReceived,
+                    OnTcpClientDisonnected = OnDBProxyDisconnected
+                };
+            }
+            ConnectDBProxy(dbPos);
+        }
 
         private void OnMessage(long userId, CustomMessageReceived msg) {
             Log(Logger.LogLevel.Verbose, LOGGER_TAG, "Received from client id: ", userId, ", appid: " + msg.appid);
@@ -255,13 +297,15 @@ namespace ArmyAnt.Server.Gate {
         private SocketUdp udpListener;
         private HttpServer httpServer;
         private SocketTcpClient dbProxy;
-        private System.IO.FileStream loggerFile;
+        private IPEndPoint dbPos;
+        private IPEndPoint dbPosLocal;
+        private IList<System.IO.FileStream> loggerFile = new List<System.IO.FileStream>();
         private Logger logger;
 
-        private IDictionary<int, long> tcpSocketUserList = new Dictionary<int, long>();
-        private IDictionary<long, int> tcpSocketIndexList = new Dictionary<long, int>();
-        private IDictionary<int, long> webSocketUserList = new Dictionary<int, long>();
-        private IDictionary<long, int> webSocketIndexList = new Dictionary<long, int>();
+        private readonly IDictionary<int, long> tcpSocketUserList = new Dictionary<int, long>();
+        private readonly IDictionary<long, int> tcpSocketIndexList = new Dictionary<long, int>();
+        private readonly IDictionary<int, long> webSocketUserList = new Dictionary<int, long>();
+        private readonly IDictionary<long, int> webSocketIndexList = new Dictionary<long, int>();
         private IList<Task> sendingTasks = new List<Task>();
     }
 }

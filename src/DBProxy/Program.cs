@@ -31,7 +31,7 @@ namespace ArmyAnt.Server.DBProxy {
         }
 #pragma warning restore CS0649
 
-        private const string CONFIG_FILE = "../res/ConfigJson/DBProxyConfig.json";
+        private const string CONFIG_FILE = "../../res/ConfigJson/DBProxyConfig.json";
 
         private static int ReturnCodeToInt(ReturnCode code) => Convert.ToInt32(code);
 

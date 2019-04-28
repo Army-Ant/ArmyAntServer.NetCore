@@ -21,8 +21,10 @@ namespace ArmyAnt.Server {
         private struct Config {
             public bool debug;
             public ushort normalSocketPort;
+            public ushort SSLSocketPort;
             public ushort udpSocketPort;
             public ushort websocketPort;
+            public ushort websocketSSLPort;
             public string logPath;
             public string logFileLevel;
             public string logConsoleLevel;
@@ -31,7 +33,7 @@ namespace ArmyAnt.Server {
         }
 #pragma warning restore CS0649
 
-        private const string CONFIG_FILE = "../res/ConfigJson/ServerMainConfig.json";
+        private const string CONFIG_FILE = "../../res/ConfigJson/ServerMainConfig.json";
 
         private static int ReturnCodeToInt(ReturnCode code) => System.Convert.ToInt32(code);
 
@@ -44,7 +46,7 @@ namespace ArmyAnt.Server {
                 // Start server
                 var serverGate = new Gate.Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
                 serverGate.ConnectDBProxy(config.dbProxyAddr, config.dbProxyPort);
-                serverGate.Start(new IPEndPoint(IPAddress.Any, config.normalSocketPort), new IPEndPoint(IPAddress.Any, config.udpSocketPort), "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketPort + "/", "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketPort + "/");
+                serverGate.Start(new IPEndPoint(IPAddress.Any, config.normalSocketPort), new IPEndPoint(IPAddress.Any, config.udpSocketPort), "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/", "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/");
                 // Wait for server ending
                 return serverGate.AwaitAll().Result;
             }
