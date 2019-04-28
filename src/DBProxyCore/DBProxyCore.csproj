@@ -32,4 +32,13 @@
     <ProjectReference Include="..\ProtoRes\ProtoRes.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="MySql.Data">
+      <HintPath>..\..\external\MySqlConnector.Net\v4.5.2\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Web">
+      <HintPath>..\..\external\MySqlConnector.Net\v4.5.2\MySql.Web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
