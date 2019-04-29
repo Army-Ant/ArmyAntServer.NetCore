@@ -26,6 +26,8 @@ namespace ArmyAnt.Server.DBProxy {
             public string logFileLevel;
             public string logConsoleLevel; // TODO: 未实现
             public string mysqlServerHost;
+            public string mysqlServerPort;
+            public string mysqlDataBase;
             public string mysqlUsername;
             public string mysqlPassword;
         }
@@ -43,6 +45,13 @@ namespace ArmyAnt.Server.DBProxy {
                 jsonFile.Close();
                 // Start server
                 var proxy = new Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
+                var dbInfo = new MySqlBridge.ConnectOptions {
+                    serverAddress = config.mysqlServerHost,
+                    serverPort = config.mysqlServerPort,
+                    userName = config.mysqlUsername,
+                    password = config.mysqlPassword,
+                };
+                proxy.ConnectDataBase(dbInfo.ToString(), config.mysqlDataBase);
                 proxy.Start(new IPEndPoint(IPAddress.Any, config.port));
                 // Wait for server ending
                 return proxy.AwaitAll().Result;

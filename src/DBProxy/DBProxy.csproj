@@ -12,6 +12,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <StartupObject>ArmyAnt.Server.DBProxy.Program</StartupObject>
     <PackageId>com.armyant.dbproxy</PackageId>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

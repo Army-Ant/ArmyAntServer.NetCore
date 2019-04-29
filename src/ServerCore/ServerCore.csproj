@@ -10,6 +10,7 @@
     <Product>ArmyAntServer</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageId>com.armyant.servercore</PackageId>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

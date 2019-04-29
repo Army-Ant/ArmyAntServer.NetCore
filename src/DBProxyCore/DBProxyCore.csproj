@@ -10,6 +10,7 @@
     <Product>ArmyAntServer</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageId>com.armyant.server.dbproxycore</PackageId>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -29,16 +30,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\external\ArmyAnt.Net\ArmyAnt.Net.csproj" />
+    <ProjectReference Include="..\..\external\MySqlConnector\src\MySqlConnector\MySqlConnector.csproj" />
     <ProjectReference Include="..\ProtoRes\ProtoRes.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MySql.Data">
-      <HintPath>..\..\external\MySqlConnector.Net\v4.5.2\MySql.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="MySql.Web">
-      <HintPath>..\..\external\MySqlConnector.Net\v4.5.2\MySql.Web.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

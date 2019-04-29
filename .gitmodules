@@ -8,3 +8,7 @@
 	path = external/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
 	ignore = dirty
+[submodule "external/MySqlConnector"]
+	path = external/MySqlConnector
+	url = https://github.com/mysql-net/MySqlConnector.git
+	ignore = dirty

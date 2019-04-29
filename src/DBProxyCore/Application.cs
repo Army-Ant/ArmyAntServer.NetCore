@@ -8,6 +8,7 @@ namespace ArmyAnt.Server.DBProxy {
     public class Application {
 
         public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
+            mySql = new MySqlBridge();
             logger = new Logger(true, consoleLevel);
             foreach(var i in loggerFile) {
                 var file = Logger.CreateLoggerFileStream(i);
@@ -27,6 +28,7 @@ namespace ArmyAnt.Server.DBProxy {
                 i.Close();
             }
             try {
+                DisconnectDataBase();
                 Stop();
             } catch(System.Net.Sockets.SocketException) {
             }
@@ -51,6 +53,18 @@ namespace ArmyAnt.Server.DBProxy {
                 await Task.WhenAll(allTask);
             }
             return 0;
+        }
+
+        public void ConnectDataBase(string connStr, string defaultDataBase) {
+            while(! mySql.Connect(connStr, defaultDataBase)) {
+                Log(Logger.LogLevel.Error, LOGGER_TAG, "Database connected failed, retrying...");
+            }
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "Database connected");
+        }
+
+        public void DisconnectDataBase() {
+            mySql.Disconnect();
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "Database disconnected");
         }
 
         public void Log(Logger.LogLevel lv, string Tag, params object[] content) {
@@ -81,6 +95,7 @@ namespace ArmyAnt.Server.DBProxy {
         private const string LOGGER_TAG = "DBProxy Main";
 
         private SocketTcpServer tcpServer;
+        private MySqlBridge mySql;
         private IList<System.IO.FileStream> loggerFile = new List<System.IO.FileStream>();
         private Logger logger;
         private IList<Task> sendingTasks = new List<Task>();
