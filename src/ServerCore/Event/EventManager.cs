@@ -18,8 +18,8 @@ namespace ArmyAnt.Server.Event {
     }
 
     public class EventManager : Thread.TaskPool<int>.ITaskQueue {
-        public IApplication ParentApp { get; }
-        public EventManager(IApplication parent) {
+        public Gate.Application ParentApp { get; }
+        public EventManager(Gate.Application parent) {
             ParentApp = parent;
             selfId = taskPool.AddTaskQueue(this);
         }
@@ -29,69 +29,80 @@ namespace ArmyAnt.Server.Event {
                 try {
                     localEventPool[_event]?.Invoke(_event, local);
                 } catch(KeyNotFoundException) {
-                    OnKeyNotFoundLocalEvent(_event, local);
+                    OnKeyNotFoundLocalEvent?.Invoke(_event, local);
                 }
             } else if(data[0] is CustomMessageReceived net) {
                 try {
                     networkEventPool[_event]?.Invoke(_event, net);
                 } catch(KeyNotFoundException) {
-                    OnKeyNotFoundNetworkMessage(_event, net);
+                    OnKeyNotFoundNetworkMessage?.Invoke(_event, net);
                 }
-            } else if(data[0] is int user && data.Length == 2 && data[1] is int check && check == 0) {
+            } else if(data[0] is long user && data.Length == 2 && data[1] is long check && check == 0) {
                 switch((SpecialEvent)_event) {
                     case SpecialEvent.UserLogin:
-                        OnUserSessionLogin(user);
-                        break;
+                    OnUserSessionLogin?.Invoke(user);
+                    break;
                     case SpecialEvent.UserLogout:
-                        OnUserSessionLogout(user);
-                        break;
+                    OnUserSessionLogout?.Invoke(user);
+                    break;
                     case SpecialEvent.UserShutdown:
-                        OnUserSessionShutdown(user);
-                        break;
+                    OnUserSessionShutdown?.Invoke(user);
+                    break;
                     case SpecialEvent.UserDisconnected:
-                        OnUserSessionDisconnected(user);
-                        break;
+                    OnUserSessionDisconnected?.Invoke(user);
+                    break;
                     case SpecialEvent.UserReconnected:
-                        OnUserSessionReconnected(user);
-                        break;
+                    OnUserSessionReconnected?.Invoke(user);
+                    break;
                     default:
-                        break;
+                    break;
                 }
             } else {
-                OnUnknownEvent(_event, data.GetType(), data);
+                OnUnknownEvent?.Invoke(_event, data.GetType(), data);
             }
         }
 
-        public System.Threading.Tasks.Task[] GetAllTasks() {
-            return taskPool.GetAllTasks();
-        }
+        public System.Threading.Tasks.Task GetTask(long id) => taskPool.GetTask(id);
+
+        public System.Threading.Tasks.Task[] GetAllTasks() => taskPool.GetAllTasks();
+
+        public void ClearAllTasks() => taskPool.ClearTaskQueue();
+
         #region User sessions operation
 
         public long AddUserSession(IUserSession user) => taskPool.AddTaskQueue(IsNotNull(user));
         public async System.Threading.Tasks.Task<bool> RemoveUserSession(long userId) => await taskPool.RemoveTaskQueue(userId);
-        public void ClearUserSession() => taskPool.ClearTaskQueue();
         public bool IsUserIn(long index) => taskPool.IsTaskQueueExist(index);
         public IUserSession GetUserSession(long index) => taskPool.GetQueue(index) as IUserSession;
         public void SetSessionOnline(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserLogin, index, 0);
-            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserLogin, SpecialEvent.UserLogin);
+            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserLogin, index);
         }
         public void SetSessionDisconnected(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserDisconnected, index, 0);
-            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserDisconnected, SpecialEvent.UserDisconnected);
+            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserDisconnected, index);
         }
         public void SetSessionReconnected(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserReconnected, index, 0);
-            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserReconnected, SpecialEvent.UserReconnected);
+            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserReconnected, index);
         }
         public void SetSessionShutdown(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserShutdown, index, 0);
-            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserShutdown, SpecialEvent.UserShutdown);
+            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserShutdown, index);
         }
         public void SetSessionLogout(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserShutdown, index, 0);
-            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserShutdown, SpecialEvent.UserShutdown);
+            taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserShutdown, index);
         }
+
+        #endregion
+
+        #region SubApplications
+
+        public long AddSubApplicationTask(ISubApplication app) => taskPool.AddTaskQueue(IsNotNull(app));
+        public async System.Threading.Tasks.Task<bool> RemoveSubApplicationTask(long appTaskId) => await taskPool.RemoveTaskQueue(appTaskId);
+        public bool IsSubApplicationIn(long taskId) => taskPool.IsTaskQueueExist(taskId);
+        public ISubApplication GetSubApplication(long taskId) => taskPool.GetQueue(taskId) as ISubApplication;
 
         #endregion
 

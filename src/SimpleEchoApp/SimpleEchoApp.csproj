@@ -1,27 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <AssemblyName>Server</AssemblyName>
-    <RootNamespace>ArmyAnt.Server</RootNamespace>
+    <AssemblyName>SimpleEchoApp</AssemblyName>
+    <RootNamespace>ArmyAnt.Server.SubApplication</RootNamespace>
     <Version>0.0.1</Version>
-    <Authors>Jason Zhao Jie</Authors>
     <Company>ArmyAnt Org</Company>
+    <Authors>Jason Zhao Jie</Authors>
     <Product>ArmyAntServer</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <StartupObject>ArmyAnt.Server.Program</StartupObject>
-    <PackageId>com.armyant.server</PackageId>
+    <PackageId>com.armyant.server.simpleechoapp</PackageId>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
 
@@ -34,7 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
-    <ProjectReference Include="..\SimpleEchoApp\SimpleEchoApp.csproj" />
   </ItemGroup>
 
 </Project>

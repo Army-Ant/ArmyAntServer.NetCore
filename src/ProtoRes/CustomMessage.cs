@@ -64,31 +64,34 @@ namespace ArmyAnt.Server {
                 }
             }
         }
-        public static int GetNetworkMessageCode<T>(T msg) where T : Google.Protobuf.IMessage => msg.Descriptor.CustomOptions.TryGetInt32(50001, out int code) ? code : 0;
+        public static int GetNetworkMessageCode<T>(T msg) where T : Google.Protobuf.IMessage => GetNetworkMessageCode(msg.Descriptor);
+        public static int GetNetworkMessageCode(Google.Protobuf.Reflection.MessageDescriptor msg) => msg.CustomOptions.TryGetInt32(50001, out int code) ? code : 0;
     }
 
-    public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage {
+    public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new() {
         public MessageBaseHead head;
         public long appid;
-        public int conversationCode;
         public ArmyAntMessage.System.ConversationStepType conversationStepType;
         public T body;
 
-        public static byte[] PackMessage(int conversationStepIndex, CustomMessageSend<T> msg) {
+        public static byte[] PackMessage(int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg) {
             byte[] msg_byte = new byte[msg.body.CalculateSize()];
             var stream = new Google.Protobuf.CodedOutputStream(msg_byte);
             msg.body.WriteTo(stream);
+            //var parser = new Google.Protobuf.MessageParser<T>(() => new T());
+            //var reparse = parser.ParseFrom(msg_byte);
             switch(msg.head.extendVersion) {
                 case 1:
                     var extend = new ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1();
                     extend.AppId = msg.appid;
-                    extend.ConversationCode = msg.conversationCode;
+                    extend.ConversationCode = conversationCode;
                     extend.ConversationStepType = msg.conversationStepType;
                     extend.ConversationStepIndex = conversationStepIndex;
                     extend.ContentLength = msg_byte.Length;
                     extend.MessageCode = MessageBaseHead.GetNetworkMessageCode(msg.body);
                     byte[] msg_extend = new byte[extend.CalculateSize()];
                     var extend_stream = new Google.Protobuf.CodedOutputStream(msg_extend);
+                    msg.head.extendLength = msg_extend.Length;
                     extend.WriteTo(extend_stream);
                     var ret = new List<byte>();
                     ret.AddRange(msg.head.Byte);

@@ -12,8 +12,8 @@ namespace ArmyAnt.Server {
         }
 
         private static class ServerMainAppid {
-            public const int simpleEchoApp = 1001;
-            public const int huolongServer = 1010;
+            public const long simpleEchoApp = 1001;
+            public const long huolongServer = 1010;
         };
 
 #pragma warning disable CS0649
@@ -47,6 +47,8 @@ namespace ArmyAnt.Server {
                 var serverGate = new Gate.Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
                 serverGate.ConnectDBProxy(config.dbProxyAddr, config.dbProxyPort);
                 serverGate.Start(new IPEndPoint(IPAddress.Any, config.normalSocketPort), new IPEndPoint(IPAddress.Any, config.udpSocketPort), "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/", "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/");
+                var simpleEchoApp = new SubApplication.SimpleEchoApp(ServerMainAppid.simpleEchoApp, serverGate);                
+                simpleEchoApp.TaskId = serverGate.StartSubApplication(simpleEchoApp)[0];
                 // Wait for server ending
                 return serverGate.AwaitAll().Result;
             }

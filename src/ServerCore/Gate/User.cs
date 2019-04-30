@@ -7,18 +7,22 @@ using ArmyAntMessage.System;
 namespace ArmyAnt.Server.Gate {
     public class User : Event.AUserSession {
         public User(Event.EventManager mgr, Network.NetworkType clientType) : base(mgr) {
-            this.clientType = clientType;
+            NetworkType = clientType;
         }
+
+        public Network.NetworkType NetworkType { get; }
 
         public override void OnLocalEvent<T>(int code, T data) {
         }
 
         public override void OnNetworkMessage(int code, CustomMessageReceived data) {
             bool contain;
-            bool stepEqual;
+            bool stepEqual = false;
             lock(conversationWaitingList) {
                 contain = conversationWaitingList.ContainsKey(data.conversationCode);
-                stepEqual = conversationWaitingList[data.conversationCode] == data.conversationStepIndex;
+                if(contain) {
+                    stepEqual = conversationWaitingList[data.conversationCode] == data.conversationStepIndex;
+                }
             }
             // Checking message step data
             switch(data.conversationStepType) {
@@ -91,8 +95,9 @@ namespace ArmyAnt.Server.Gate {
                     EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", UserId, " , message code: ", code, " , conversation type: ", (long)data.conversationStepType);
                     return;
             }
-            // TODO: resolve message
 
+            var app = EventManager.ParentApp.GetSubApplication(data.appid);
+            app?.OnNetworkMessage(code, data, this);
         }
 
         public override void OnUnknownEvent<T>(int _event, params T[] data) {
@@ -113,15 +118,23 @@ namespace ArmyAnt.Server.Gate {
         public override void OnUserSessionShutdown(long index) {
         }
 
-        public bool SendMessage<T>(CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage {
+        public int GenerateNewConversationCode() {
+            int ret = 0;
+            lock(conversationWaitingList) {
+                while(conversationWaitingList.ContainsKey(++ret)) { }
+            }
+            return ret;
+        }
+
+        public bool SendMessage<T>(CustomMessageSend<T> msg, int conversationCode = 0) where T : Google.Protobuf.IMessage<T>, new() {
             // 这是从 C++ 的 ArmyAntServer 复制过来的发送代码, 因为时间来不及, 先放在这里提交, 回去处理
             int conversationStepIndex = 0;
             bool contains = false;
             lock(conversationWaitingList) {
                 {
-                    contains = conversationWaitingList.ContainsKey(msg.conversationCode);
+                    contains = conversationWaitingList.ContainsKey(conversationCode);
                     if(contains) {
-                        conversationStepIndex = conversationWaitingList[msg.conversationCode];
+                        conversationStepIndex = conversationWaitingList[conversationCode];
                     }
                 }
             }
@@ -131,20 +144,20 @@ namespace ArmyAnt.Server.Gate {
                 case ConversationStepType.StartConversation:
                     conversationStepIndex = 0;
                     if(contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation start with an existed code: ", msg.conversationCode);
+                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation start with an existed code: ", conversationCode);
                         return false;
-                    }
+                }
                     break;
                 case ConversationStepType.ConversationStepOn:
                     if(!contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation step on with an inexisted code: ", msg.conversationCode);
+                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation step on with an inexisted code: ", conversationCode);
                         return false;
                     }
                     conversationStepIndex += 1;
                     break;
                 case ConversationStepType.ResponseEnd:
                     if(!contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation reply with an unexisted code: ", msg.conversationCode);
+                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation reply with an unexisted code: ", conversationCode);
                         return false;
                     }
                     conversationStepIndex += 1;
@@ -157,16 +170,16 @@ namespace ArmyAnt.Server.Gate {
             lock(conversationWaitingList) {
                 switch(msg.conversationStepType) {
                     case ConversationStepType.AskFor:
-                        conversationWaitingList.Add(msg.conversationCode, 0);
+                        conversationWaitingList.Add(conversationCode, 0);
                         break;
                     case ConversationStepType.StartConversation:
-                        conversationWaitingList.Add(msg.conversationCode, 1);
+                        conversationWaitingList.Add(conversationCode, 1);
                         break;
                     case ConversationStepType.ConversationStepOn:
-                        conversationWaitingList[msg.conversationCode] = conversationStepIndex;
+                        conversationWaitingList[conversationCode] = conversationStepIndex;
                         break;
                     case ConversationStepType.ResponseEnd:
-                        conversationWaitingList.Remove(msg.conversationCode);
+                        conversationWaitingList.Remove(conversationCode);
                         break;
                     default:
                         // TODO: Warning
@@ -174,11 +187,9 @@ namespace ArmyAnt.Server.Gate {
                 }
             }
 
-            EventManager.ParentApp.Send(clientType, UserId, conversationStepIndex, msg);
+            EventManager.ParentApp.Send(NetworkType, UserId, conversationCode, conversationStepIndex, msg);
             return true;
         }
-
-        private Network.NetworkType clientType;
         private IDictionary<int, int> conversationWaitingList = new Dictionary<int, int>();
 
         private const string LOGGER_TAG = "Gate User Session";

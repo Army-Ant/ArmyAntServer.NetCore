@@ -71,8 +71,8 @@ namespace ArmyAnt.Server.DBProxy {
             logger.WriteLine(lv, "[ ", Tag, " ] ", content);
         }
 
-        public void Send<T>(NetworkType type, int index, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage {
-            var sending = CustomMessageSend <T>.PackMessage(conversationStepIndex, msg);
+        public void Send<T>(NetworkType type, int index, int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage<T>, new() {
+            var sending = CustomMessageSend <T>.PackMessage(conversationCode, conversationStepIndex, msg);
             sendingTasks.Add(tcpServer.Send(index, sending));
         }
 

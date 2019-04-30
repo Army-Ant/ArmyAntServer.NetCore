@@ -6,7 +6,7 @@ using ArmyAnt.IO;
 using System.Linq;
 
 namespace ArmyAnt.Server.Gate {
-    public sealed class Application : IApplication {
+    public sealed class Application {
         public Event.EventManager EventManager { get; private set; }
 
         public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {
@@ -46,16 +46,52 @@ namespace ArmyAnt.Server.Gate {
         }
 
         public void Stop() {
+            foreach(var i in appList) {
+                i.Value.Stop();
+                i.Value.WaitAll();
+            }
+            appList.Clear();
             DisconnectDBProxy();
             httpServer.Stop();
             tcpServer.Stop();
             udpListener.Stop();
-            EventManager.ClearUserSession();
+            EventManager.ClearAllTasks();
             tcpSocketUserList.Clear();
             tcpSocketIndexList.Clear();
             webSocketUserList.Clear();
             webSocketIndexList.Clear();
             Log(Logger.LogLevel.Info, LOGGER_TAG, "Server stopped");
+        }
+
+        public long[] StartSubApplication(params ISubApplication[] apps) {
+            var ret = new long[apps.Length];
+            for(var i = 0; i < apps.Length; ++i) {
+                appList.Add(apps[i].AppId, apps[i]);
+                EventManager.OnUserSessionLogin += apps[i].OnUserSessionLogin;
+                EventManager.OnUserSessionLogout += apps[i].OnUserSessionLogout;
+                EventManager.OnUserSessionDisconnected += apps[i].OnUserSessionDisconnected;
+                EventManager.OnUserSessionReconnected += apps[i].OnUserSessionReconnected;
+                EventManager.OnUserSessionShutdown += apps[i].OnUserSessionShutdown;
+                ret[i] = EventManager.AddSubApplicationTask(apps[i]);
+                apps[i].Start();
+            }
+            return ret;
+        }
+
+        public void StopSubApplication(params long[] appid) {
+            foreach(var i in appid) {
+                appList[i].Stop();
+                appList[i].WaitAll().Wait();
+                appList.Remove(i);
+            }
+        }
+
+        public ISubApplication GetSubApplication(long appid) {
+            try {
+                return appList[appid];
+            }catch(KeyNotFoundException ) {
+                return null;
+            }
         }
 
         public async Task<int> AwaitAll() {
@@ -70,6 +106,7 @@ namespace ArmyAnt.Server.Gate {
             allTask.AddRange(websocketClientsTask);
             allTask.Add(dbProxyTask);
             allTask.AddRange(usersTask);
+            allTask.AddRange(sendingTasks);
             await Task.WhenAll(allTask);
             return 0;
         }
@@ -93,8 +130,8 @@ namespace ArmyAnt.Server.Gate {
                 Log(Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
                 ConnectDBProxy(dbProxy);
             }
-    Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
-}
+            Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+        }
 
         public void DisconnectDBProxy() {
             dbProxy.Stop();
@@ -109,34 +146,32 @@ namespace ArmyAnt.Server.Gate {
             logger.WriteLine(lv, " [ ", Tag, " ] ", content);
         }
 
-        public void Send<T>(NetworkType type, long userId, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage {
+        public void Send<T>(NetworkType type, long userId, int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage<T>, new() {
             int index = 0;
             byte[] sending;
             switch(type) {
                 case NetworkType.Tcp:
-                    lock(tcpSocketIndexList) {
-                        if(!tcpSocketIndexList.ContainsKey(userId)) {
-                            Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending TCP message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
-                            return;
-                        }
-                        index = tcpSocketIndexList[userId];
+                lock(tcpSocketIndexList) {
+                    if(!tcpSocketIndexList.ContainsKey(userId)) {
+                        Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending TCP message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
+                        return;
                     }
-                    sending = CustomMessageSend<T>.PackMessage(conversationStepIndex, msg);
-                    sendingTasks.Add(tcpServer.Send(index, sending));
-                    break;
+                    index = tcpSocketIndexList[userId];
+                }
+                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, msg);
+                sendingTasks.Add(tcpServer.Send(index, sending));
+                break;
                 case NetworkType.Websocket:
-                    lock(webSocketIndexList) {
-                        if(!webSocketIndexList.ContainsKey(userId)) {
-                            if(!webSocketIndexList.ContainsKey(userId)) {
-                                Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending Websocket message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
-                                return;
-                            }
-                            index = webSocketIndexList[userId];
-                        }
+                lock(webSocketIndexList) {
+                    if(!webSocketIndexList.ContainsKey(userId)) {
+                        Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending Websocket message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
+                        return;
                     }
-                    sending = CustomMessageSend<T>.PackMessage(conversationStepIndex, msg);
-                    sendingTasks.Add(httpServer.Send(index, sending));
-                    break;
+                    index = webSocketIndexList[userId];
+                }
+                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, msg);
+                sendingTasks.Add(httpServer.Send(index, sending));
+                break;
             }
         }
 
@@ -184,7 +219,7 @@ namespace ArmyAnt.Server.Gate {
 
         private void OnTcpServerDisonnected(int index) {
             lock(tcpSocketUserList) {
-                if(tcpSocketUserList.ContainsKey(index)) {
+                if(!tcpSocketUserList.ContainsKey(index)) {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a TCP client disconnected , but no session record here");
                 } else {
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A TCP client disconnected");
@@ -236,7 +271,7 @@ namespace ArmyAnt.Server.Gate {
 
         private void OnWebsocketServerDisonnected(int index) {
             lock(webSocketUserList) {
-                if(webSocketUserList.ContainsKey(index)) {
+                if(!webSocketUserList.ContainsKey(index)) {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a Websocket client disconnected , but no session record here");
                 } else {
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A Websocket client disconnected");
@@ -306,6 +341,7 @@ namespace ArmyAnt.Server.Gate {
         private readonly IDictionary<long, int> tcpSocketIndexList = new Dictionary<long, int>();
         private readonly IDictionary<int, long> webSocketUserList = new Dictionary<int, long>();
         private readonly IDictionary<long, int> webSocketIndexList = new Dictionary<long, int>();
-        private IList<Task> sendingTasks = new List<Task>();
+        private readonly IList<Task> sendingTasks = new List<Task>();
+        private readonly IDictionary<long, ISubApplication> appList = new Dictionary<long, ISubApplication>();
     }
 }
