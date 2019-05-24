@@ -156,9 +156,14 @@ namespace ArmyAnt.Server.SubApplication {
                     response.Result = 0;    // successful
                     response.Message = "Send successful !";
                     Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a message to user: ", message.Target);
-                    notice = new SM2C_EchoReceiveNotice();
+                    notice = new SM2C_EchoReceiveNotice() {
+                        IsBroadcast = false,
+                        From = fromUser,
+                        Message = message.Message,
+                    };
                 }
             }
+            response.Request = message;
             user.SendMessage(new CustomMessageSend<SM2C_EchoSendResponse> {
                 head = head,
                 appid = AppId,
@@ -166,9 +171,6 @@ namespace ArmyAnt.Server.SubApplication {
                 body = response,
             }, conversationCode);
             if(notice != null) {
-                notice.IsBroadcast = false;
-                notice.From = fromUser;
-                notice.Message = message.Message;
                 tarUser.SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
                     head = head,
                     appid = AppId,
@@ -197,8 +199,13 @@ namespace ArmyAnt.Server.SubApplication {
                 response.Result = 0;    // successful
                 response.Message = "Send successful !";
                 Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a broadcast message");
-                notice = new SM2C_EchoReceiveNotice();
+                notice = new SM2C_EchoReceiveNotice() {
+                    IsBroadcast = true,
+                    From = fromUser,
+                    Message = message.Message,
+                };
             }
+            response.Request = message;
             user.SendMessage(new CustomMessageSend<SM2C_EchoBroadcastResponse> {
                 head = head,
                 appid = AppId,
@@ -206,9 +213,6 @@ namespace ArmyAnt.Server.SubApplication {
                 body = response,
             }, conversationCode);
             if(notice != null) {
-                notice.IsBroadcast = true;
-                notice.From = fromUser;
-                notice.Message = message.Message;
                 lock(loggedUsers) {
                     foreach(var i in loggedUsers) {
                         (Server.EventManager.GetUserSession(i.Value) as Gate.User).SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
