@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>SimpleEchoApp</AssemblyName>
     <RootNamespace>ArmyAnt.Server.SubApplication</RootNamespace>
     <Version>0.0.1</Version>

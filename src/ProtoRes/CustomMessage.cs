@@ -65,7 +65,7 @@ namespace ArmyAnt.Server {
             }
         }
         public static int GetNetworkMessageCode<T>(T msg) where T : Google.Protobuf.IMessage => GetNetworkMessageCode(msg.Descriptor);
-        public static int GetNetworkMessageCode(Google.Protobuf.Reflection.MessageDescriptor msg) => msg.CustomOptions.TryGetInt32(50001, out int code) ? code : 0;
+        public static int GetNetworkMessageCode(Google.Protobuf.Reflection.MessageDescriptor msg) => msg.GetOptions().GetExtension(BaseExtensions.MsgCode);
     }
 
     public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new() {
