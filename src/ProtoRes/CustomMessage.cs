@@ -4,8 +4,9 @@ using System.Collections.Generic;
 namespace ArmyAnt.Server {
     public enum MessageType : int {
         Unknown,
-        Normal,
+        Protobuf,
         File,
+        Json,
     }
 
     [System.Serializable]
@@ -16,7 +17,7 @@ namespace ArmyAnt.Server {
         public int extendLength;
         public MessageBaseHead(byte[] wholeMessage) {
             serials = 0;
-            type = MessageType.Normal;
+            type = MessageType.Protobuf;
             extendVersion = 1;
             extendLength = 1;
             Byte = wholeMessage;

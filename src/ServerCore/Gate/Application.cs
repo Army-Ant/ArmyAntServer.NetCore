@@ -111,26 +111,28 @@ namespace ArmyAnt.Server.Gate {
             return 0;
         }
 
-        public void ConnectDBProxy(string dbProxyAddr, ushort dbProxyPort) {
+        public bool ConnectDBProxy(string dbProxyAddr, ushort dbProxyPort) {
             try {
                 dbProxy.Connect(IPAddress.Parse(dbProxyAddr), dbProxyPort);
                 dbPos = dbProxy.ServerIPEndPoint;
             }catch(System.Net.Sockets.SocketException e) {
                 Log(System.Text.Encoding.Default, Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
-                ConnectDBProxy(dbProxyAddr, dbProxyPort);
+                return false;
             }
             Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+            return true;
         }
 
-        public void ConnectDBProxy(IPEndPoint dbProxy) {
+        public bool ConnectDBProxy(IPEndPoint dbProxy) {
             try {
                 this.dbProxy.Connect(dbProxy);
                 dbPos = this.dbProxy.ServerIPEndPoint;
             } catch(System.Net.Sockets.SocketException e) {
                 Log(Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
-                ConnectDBProxy(dbProxy);
+                return false;
             }
             Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+            return true;
         }
 
         public void DisconnectDBProxy() {
@@ -314,7 +316,7 @@ namespace ArmyAnt.Server.Gate {
                     OnTcpClientDisonnected = OnDBProxyDisconnected
                 };
             }
-            ConnectDBProxy(dbPos);
+            while (!ConnectDBProxy(dbPos)) ;
         }
 
         private void OnMessage(long userId, CustomMessageReceived msg) {

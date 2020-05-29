@@ -12,3 +12,6 @@
 	path = external/MySqlConnector
 	url = https://github.com/mysql-net/MySqlConnector.git
 	ignore = dirty
+[submodule "external/ArmyAnt.js"]
+	path = external/ArmyAnt.js
+	url = https://github.com/Army-Ant/ArmyAnt.js.git

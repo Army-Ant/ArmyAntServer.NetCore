@@ -331,3 +331,15 @@ ASALocalRun/
 
 # 
 src/ProtoRes/res
+
+# Generated test files
+/test/proto-js
+/test/libprotobuf-js
+/test/libclosure-js
+/test/ArmyAnt.js
+/test/package.json
+/test/package-lock.json
+/test/ArmyAntServer_TestClient_CSharp/ArmyAntServer_TestClient_CSharp/bin
+/test/ArmyAntServer_TestClient_CSharp/ArmyAntServer_TestClient_CSharp/obj
+/test/ArmyAntServer_TestClient_CSharp/ArmyAntServer_TestClient_CSharp/libprotobof
+/test/ArmyAntServer_TestClient_CSharp/ArmyAntServer_TestClient_CSharp/protobufSource

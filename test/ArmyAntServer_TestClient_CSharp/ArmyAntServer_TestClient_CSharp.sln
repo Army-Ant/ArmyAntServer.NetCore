@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArmyAntServer_TestClient_CSharp", "ArmyAntServer_TestClient_CSharp\ArmyAntServer_TestClient_CSharp.csproj", "{FC5B8F3B-1534-4502-95B1-6F9C363E06CF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Protobuf", "..\..\external\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj", "{05CD27BC-45F2-4861-9F10-0DC4488D0B8C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FC5B8F3B-1534-4502-95B1-6F9C363E06CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC5B8F3B-1534-4502-95B1-6F9C363E06CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC5B8F3B-1534-4502-95B1-6F9C363E06CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC5B8F3B-1534-4502-95B1-6F9C363E06CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05CD27BC-45F2-4861-9F10-0DC4488D0B8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05CD27BC-45F2-4861-9F10-0DC4488D0B8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05CD27BC-45F2-4861-9F10-0DC4488D0B8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05CD27BC-45F2-4861-9F10-0DC4488D0B8C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5DFABA25-CF43-4310-A6CF-0DBD51F20DA5}
+	EndGlobalSection
+EndGlobal

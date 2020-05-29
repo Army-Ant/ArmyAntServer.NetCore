@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <title>ArmyAntServer Websocket Test Page</title>
+  <script src="libclosure-js/closure/goog/base.js"></script>
+  <script src="ArmyAnt.js/externals/jquery-2.2.4.js"></script>
+  <script type="module">
+    import websocket_tester from "./websocket_test.js";
+    window.onload = websocket_tester.onload
+	window.tester = websocket_tester
+  </script>
+</head>
+<body>
+	<input id="myusername" style="height:20px;width:200px" value="jason" /></br>
+    <button id="btnConnect" style="height:60px;width:200px" onclick="tester.connect();">连接服务器</button></br>
+    <button id="btnLogin" style="height:60px;width:200px" disabled="disabled" onclick="tester.login()">登录</button></br>
+    <button id="btnSend" style="height:60px;width:200px" disabled="disabled" onclick="tester.send()">发送消息</button></br>
+    <button id="btnBroadcast" style="height:60px;width:200px" disabled="disabled" onclick="tester.broadcast()">发送广播</button></br>
+	<a id="tarusername_title">发送到:</a></br>
+	<input id="tarusername" style="height:20px;width:200px" /></br>
+	<a id="sendingcontent_title">发送内容:</a></br>
+	<input id="sendingcontent" style="height:100px;width:200px" /></br>
+    <a id="message" />
+</body>
+</html>
