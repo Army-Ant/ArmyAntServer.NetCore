@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using ArmyAnt.IO;
-using MySql.Data.MySqlClient;
+
+using MySqlConnector;
 
 namespace ArmyAnt.Server.DBProxy {
     public class MySqlBridge : SqlClient {
