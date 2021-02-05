@@ -6,7 +6,8 @@ using ArmyAntMessage.System;
 
 namespace ArmyAnt.Server.Gate {
     public class User : Event.AUserSession {
-        public User(Event.EventManager mgr, Network.NetworkType clientType) : base(mgr) {
+        public User(Application application, Network.NetworkType clientType){
+            app = application;
             NetworkType = clientType;
         }
 
@@ -28,19 +29,19 @@ namespace ArmyAnt.Server.Gate {
             switch(data.conversationStepType) {
                 case ConversationStepType.NoticeOnly:
                     if(contain) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
                         return;
                     } else if(data.conversationStepIndex != 0) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
                         return;
                     }
                     break;
                 case ConversationStepType.AskFor:
                     if(contain) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
                         return;
                     } else if(data.conversationStepIndex != 0) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
                         return;
                     } else {
                         // Record the ask-for
@@ -51,10 +52,10 @@ namespace ArmyAnt.Server.Gate {
                     break;
                 case ConversationStepType.StartConversation:
                     if(contain) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
                         return;
                     } else if(data.conversationStepIndex != 0) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
                         return;
                     } else {
                         // Record the conversation
@@ -65,10 +66,10 @@ namespace ArmyAnt.Server.Gate {
                     break;
                 case ConversationStepType.ConversationStepOn:
                     if(!contain) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
                         return;
                     } else if(!stepEqual) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
                         return;
                     } else {
                         // Record the conversation step
@@ -79,10 +80,10 @@ namespace ArmyAnt.Server.Gate {
                     break;
                 case ConversationStepType.ResponseEnd:
                     if(!contain) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", UserId, " , message code: ", code, " , conversation code: ", data.conversationCode);
                         return;
                     } else if(stepEqual && data.conversationStepIndex != 0) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", UserId, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
                         return;
                     } else {
                         // Remove the waiting data
@@ -92,12 +93,12 @@ namespace ArmyAnt.Server.Gate {
                     }
                     break;
                 default:
-                    EventManager.ParentApp.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", UserId, " , message code: ", code, " , conversation type: ", (long)data.conversationStepType);
+                    app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", UserId, " , message code: ", code, " , conversation type: ", (long)data.conversationStepType);
                     return;
             }
 
-            var app = EventManager.ParentApp.GetSubApplication(data.appid);
-            app?.OnNetworkMessage(code, data, this);
+            var subApp = app.GetSubApplication(data.appid);
+            subApp?.OnNetworkMessage(code, data, this);
         }
 
         public override void OnUnknownEvent<T>(int _event, params T[] data) {
@@ -144,26 +145,26 @@ namespace ArmyAnt.Server.Gate {
                 case ConversationStepType.StartConversation:
                     conversationStepIndex = 0;
                     if(contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation start with an existed code: ", conversationCode);
+                        app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation start with an existed code: ", conversationCode);
                         return false;
                 }
                     break;
                 case ConversationStepType.ConversationStepOn:
                     if(!contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation step on with an inexisted code: ", conversationCode);
+                        app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation step on with an inexisted code: ", conversationCode);
                         return false;
                     }
                     conversationStepIndex += 1;
                     break;
                 case ConversationStepType.ResponseEnd:
                     if(!contains) {
-                        EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation reply with an unexisted code: ", conversationCode);
+                        app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Sending a network message as conversation reply with an unexisted code: ", conversationCode);
                         return false;
                     }
                     conversationStepIndex += 1;
                     break;
                 default:
-                    EventManager.ParentApp.Log(Logger.LogLevel.Error, LOGGER_TAG, "Unknown conversation step type when sending a network message: ", msg.conversationStepType);
+                    app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Unknown conversation step type when sending a network message: ", msg.conversationStepType);
                     return false;
             }
 
@@ -187,9 +188,12 @@ namespace ArmyAnt.Server.Gate {
                 }
             }
 
-            EventManager.ParentApp.Send(NetworkType, UserId, conversationCode, conversationStepIndex, msg);
+            app.Send(NetworkType, UserId, conversationCode, conversationStepIndex, msg);
             return true;
         }
+
+        private Application app;
+
         private IDictionary<int, int> conversationWaitingList = new Dictionary<int, int>();
 
         private const string LOGGER_TAG = "Gate User Session";

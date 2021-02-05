@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading.Tasks;
 using ArmyAnt.Network;
 using ArmyAnt.IO;
-using System.Linq;
 
 namespace ArmyAnt.Server.Gate {
     public sealed class Application {
@@ -207,10 +206,11 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "New TCP client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
                 } else {
-                    var user = new User(EventManager, NetworkType.Tcp);
+                    var user = new User(this, NetworkType.Tcp);
+                    user.UserId = EventManager.AddUserSession(user);
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "New TCP client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
                     lock(tcpSocketIndexList) {
-                        tcpSocketUserList.Add(index, user.UserId);
+                        tcpSocketUserList.Add(index, user);
                         tcpSocketIndexList.Add(user.UserId, index);
                     }
                     EventManager.SetSessionOnline(user.UserId);
@@ -227,11 +227,11 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A TCP client disconnected");
                 }
                 lock(tcpSocketIndexList) {
-                    long userSession = tcpSocketUserList[index];
-                    EventManager.SetSessionLogout(userSession);
-                    EventManager.RemoveUserSession(userSession).Wait();
+                    long userId = tcpSocketUserList[index].UserId;
+                    EventManager.SetSessionLogout(userId);
+                    EventManager.RemoveUserSession(userId).Wait();
                     tcpSocketUserList.Remove(index);
-                    tcpSocketIndexList.Remove(userSession);
+                    tcpSocketIndexList.Remove(userId);
                 }
             }
         }
@@ -243,7 +243,7 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a TCP message , but no session record here!");
                     return;
                 }
-                userId = tcpSocketUserList[index];
+                userId = tcpSocketUserList[index].UserId;
             }
             var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
@@ -259,10 +259,11 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "New Websocket client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
                 } else {
-                    var user = new User(EventManager, NetworkType.Websocket);
+                    var user = new User(this, NetworkType.Websocket);
+                    user.UserId = EventManager.AddUserSession(user);
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "New Websocket client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.UserId);
                     lock(webSocketUserList) {
-                        webSocketUserList.Add(index, user.UserId);
+                        webSocketUserList.Add(index, user);
                         webSocketIndexList.Add(user.UserId, index);
                     }
                     EventManager.SetSessionOnline(user.UserId);
@@ -279,11 +280,11 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Verbose, LOGGER_TAG, "A Websocket client disconnected");
                 }
                 lock(webSocketUserList) {
-                    long userSession = webSocketUserList[index];
-                    EventManager.SetSessionLogout(userSession);
-                    EventManager.RemoveUserSession(userSession).Wait();
+                    long userId = webSocketUserList[index].UserId;
+                    EventManager.SetSessionLogout(userId);
+                    EventManager.RemoveUserSession(userId).Wait();
                     webSocketUserList.Remove(index);
-                    webSocketIndexList.Remove(userSession);
+                    webSocketIndexList.Remove(userId);
                 }
             }
         }
@@ -295,7 +296,7 @@ namespace ArmyAnt.Server.Gate {
                     Log(Logger.LogLevel.Error, LOGGER_TAG, "Detected a Websocket message , but no session record here!");
                     return;
                 }
-                userId = webSocketUserList[index];
+                userId = webSocketUserList[index].UserId;
             }
             var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
@@ -320,7 +321,7 @@ namespace ArmyAnt.Server.Gate {
         }
 
         private void OnMessage(long userId, CustomMessageReceived msg) {
-            Log(Logger.LogLevel.Verbose, LOGGER_TAG, "Received from client id: ", userId, ", appid: " + msg.appid);
+            Log(Logger.LogLevel.Verbose, LOGGER_TAG, "Received from user id: ", userId, ", appid: " + msg.appid);
             if(!EventManager.IsUserIn(userId)) {
                 Log(Logger.LogLevel.Warning, LOGGER_TAG, "Cannot find the user session: ", userId, " when resolving the message");
                 return;
@@ -339,9 +340,9 @@ namespace ArmyAnt.Server.Gate {
         private IList<System.IO.FileStream> loggerFile = new List<System.IO.FileStream>();
         private Logger logger;
 
-        private readonly IDictionary<int, long> tcpSocketUserList = new Dictionary<int, long>();
+        private readonly IDictionary<int, User> tcpSocketUserList = new Dictionary<int, User>();
         private readonly IDictionary<long, int> tcpSocketIndexList = new Dictionary<long, int>();
-        private readonly IDictionary<int, long> webSocketUserList = new Dictionary<int, long>();
+        private readonly IDictionary<int, User> webSocketUserList = new Dictionary<int, User>();
         private readonly IDictionary<long, int> webSocketIndexList = new Dictionary<long, int>();
         private readonly IList<Task> sendingTasks = new List<Task>();
         private readonly IDictionary<long, ISubApplication> appList = new Dictionary<long, ISubApplication>();

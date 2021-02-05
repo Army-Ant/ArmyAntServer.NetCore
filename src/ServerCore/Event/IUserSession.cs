@@ -24,7 +24,6 @@ namespace ArmyAnt.Server.Event {
     }
 
     public interface IUserSession : Thread.TaskPool<int>.ITaskQueue {
-        EventManager EventManager { get;}
         long UserId { get; }
         SessionStatus SessionStatus { get; }
         void OnLocalEvent<T>(int code, T data) where T: LocalEventArg;
@@ -32,19 +31,9 @@ namespace ArmyAnt.Server.Event {
     }
 
     public abstract class AUserSession : IUserSession {
-        public AUserSession(EventManager parent) {
-            EventManager = parent;
-            UserId = parent.AddUserSession(this);
-        }
-
-        ~AUserSession() {
-            EventManager?.RemoveUserSession(UserId);
-        }
-
         #region Realized interface properties
 
-        public EventManager EventManager { get; private set; }
-        public long UserId { get; private set; }
+        public long UserId { get; set; }
         public SessionStatus SessionStatus { get; private set; }
 
         #endregion

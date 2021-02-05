@@ -12,14 +12,16 @@ namespace ArmyAntServer_TestClient_CSharp
     class Network
     {
         public delegate bool OnReadCallback(int serials, int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data);
-        public Network(OnReadCallback cb)
+        public delegate void OnDisconnectedCallback(bool isKickedOut, string reason);
+        public Network(OnReadCallback rCB, OnDisconnectedCallback disCB)
         {
             tcp = null;
             web = null;
             readCanceller = new CancellationTokenSource();
             socketCanceller = new CancellationTokenSource();
             buffer = new Queue<byte>();
-            onReadCallback = cb;
+            onReadCallback = rCB;
+            onDisconnectedCallback = disCB;
             readTask = null;
         }
 
@@ -49,7 +51,8 @@ namespace ArmyAntServer_TestClient_CSharp
             {
                 return false;
             }
-            readTask = OnRead();
+            readCanceller = new CancellationTokenSource();
+            readTask = OnRead(readCanceller);
             return true;
         }
 
@@ -108,9 +111,8 @@ namespace ArmyAntServer_TestClient_CSharp
                 await web.SendAsync(new ArraySegment<byte>(sendBytes), WebSocketMessageType.Binary, true, socketCanceller.Token);
         }
 
-        private async Task OnRead()
+        private async Task OnRead(CancellationTokenSource canceller)
         {
-            readCanceller = new CancellationTokenSource();
             while (!readCanceller.IsCancellationRequested)
             {
                 var byteBuffer = new byte[8192];
@@ -128,6 +130,21 @@ namespace ArmyAntServer_TestClient_CSharp
                     {
                         var msg = e.Message;
                         msg = msg + "";
+                        if (web != null && web.CloseStatus != null)
+                        {
+                            onDisconnectedCallback(true, "Server kicked out! close-status: " + web.CloseStatus.ToString() + ", info: " + web.CloseStatusDescription);
+                        }
+                        else
+                        {
+                            onDisconnectedCallback(true, "Server Error! inner exception: " + e.InnerException.Message);
+
+                        }
+                        readCanceller.Cancel(true);
+                        web = null;
+                        readTask = null;
+                        if (!socketCanceller.IsCancellationRequested)
+                            socketCanceller.Cancel();
+                        break;
                     }
                 }
                 if (len <= 0)
@@ -151,7 +168,10 @@ namespace ArmyAntServer_TestClient_CSharp
                 bool ret = onReadCallback(baseHead.serials, baseHead.type, extend.AppId, extend.MessageCode, extend.ConversationCode, extend.ConversationStepIndex, contentBuffer);
                 buffer.Clear();
                 if (!ret)
+                {
                     await DisconnectServer();
+                    onDisconnectedCallback(false, "User called close after Read-Callback");
+                }
             }
         }
 
@@ -161,6 +181,7 @@ namespace ArmyAntServer_TestClient_CSharp
         private CancellationTokenSource socketCanceller;
         private Queue<byte> buffer;
         private OnReadCallback onReadCallback;
+        private OnDisconnectedCallback onDisconnectedCallback;
         private Task readTask;
 
         private struct BaseHead

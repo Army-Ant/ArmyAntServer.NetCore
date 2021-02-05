@@ -43,6 +43,8 @@ namespace ArmyAnt.Server
 
         private static int ReturnCodeToInt(ReturnCode code) => System.Convert.ToInt32(code);
 
+        public static Gate.Application server;
+
         private static int Main(params string[] arg)
         {
             // Parse config json file
@@ -55,6 +57,7 @@ namespace ArmyAnt.Server
                 var serverGate = new Gate.Application(IO.Logger.LevelFromString(config.logConsoleLevel), IO.Logger.LevelFromString(config.logFileLevel), config.logPath);
                 while (!serverGate.ConnectDBProxy(config.dbProxyAddr, config.dbProxyPort)) ;
                 serverGate.Start(new IPEndPoint(IPAddress.Any, config.normalSocketPort), new IPEndPoint(IPAddress.Any, config.udpSocketPort), "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/", "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/");
+                server = serverGate;
                 var simpleEchoApp = new SubApplication.SimpleEchoApp(ServerMainAppid.simpleEchoApp, serverGate);
                 simpleEchoApp.TaskId = serverGate.StartSubApplication(simpleEchoApp)[0];
                 // Wait for server ending

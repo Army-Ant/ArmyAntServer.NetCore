@@ -24,7 +24,7 @@ namespace ArmyAntServer_TestClient_CSharp
         public Form_Main()
         {
             InitializeComponent();
-            net = new Network(onReceiveCallback);
+            net = new Network(onReceiveCallback, onDisconnectedCallback);
 
             loginRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoLoginRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
             logoutRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoLogoutRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
@@ -49,6 +49,9 @@ namespace ArmyAntServer_TestClient_CSharp
                     logged = true;
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 登录成功!" + Environment.NewLine;
                     btnLoginout.Text = "退出登录";
+                    loginNameTextBox_TextChanged(null, null);
+                    sendTextBox_TextChanged(null, null);
+                    targetUserTextBox_TextChanged(null, null);
                 }
                 else
                 {
@@ -65,6 +68,8 @@ namespace ArmyAntServer_TestClient_CSharp
                     logged = false;
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 退出登录成功!" + Environment.NewLine;
                     btnLoginout.Text = "登录EchoServer";
+                    btnSend.Enabled = false;
+                    btnBroadcast.Enabled = false;
                     loginNameTextBox.Enabled = true;
                 }
                 else
@@ -122,6 +127,18 @@ namespace ArmyAntServer_TestClient_CSharp
             return true;
         }
 
+        private void onDisconnectedCallback(bool isKickedOut, string reason)
+        {
+            btnConnectinout.Text = "连接服务器";
+            connected = false;
+            btnLoginout.Text = "登录EchoServer";
+            logged = false;
+            btnLoginout.Enabled = false;
+            btnBroadcast.Enabled = false;
+            btnSend.Enabled = false;
+            receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 已断开服务器, 断开原因：" + reason + Environment.NewLine;
+        }
+
         private void Form_onLoad(object sender, EventArgs e)
         {
             btnLoginout.Enabled = false;
@@ -170,15 +187,8 @@ namespace ArmyAntServer_TestClient_CSharp
             if (connected)
             {
                 await net.DisconnectServer();
-                btnConnectinout.Text = "连接服务器";
-                connected = false;
-                btnLoginout.Text = "登录EchoServer";
-                logged = false;
-                btnLoginout.Enabled = false;
-                btnBroadcast.Enabled = false;
-                btnSend.Enabled = false;
-                MessageBox.Show(this, "连接已断开", "断开连接", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 已断开服务器" + Environment.NewLine;
+                onDisconnectedCallback(false, "手动断开");
+                //MessageBox.Show(this, "连接已断开", "断开连接", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
             }
             else
             {
@@ -189,12 +199,13 @@ namespace ArmyAntServer_TestClient_CSharp
                     btnLoginout.Enabled = true;
                     loginNameTextBox_TextChanged(sender, e);
                     sendTextBox_TextChanged(sender, e);
-                    MessageBox.Show(this, "连接成功", "连接服务器", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                    targetUserTextBox_TextChanged(sender, e);
+                    //MessageBox.Show(this, "连接成功", "连接服务器", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 已连接服务器" + Environment.NewLine;
                 }
                 else
                 {
-                    MessageBox.Show(this, "连接失败", "连接服务器", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    //MessageBox.Show(this, "连接失败", "连接服务器", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 连接服务器失败" + Environment.NewLine;
                 }
             }
