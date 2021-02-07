@@ -136,7 +136,7 @@ namespace ArmyAntServer_TestClient_CSharp
                         }
                         else
                         {
-                            onDisconnectedCallback(true, "Server Error! inner exception: " + e.InnerException.Message);
+                            onDisconnectedCallback(true, "Socket Error! inner exception: " + e.InnerException.Message);
 
                         }
                         readCanceller.Cancel(true);
