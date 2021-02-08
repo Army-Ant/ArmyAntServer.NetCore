@@ -13,7 +13,10 @@ namespace ArmyAnt.ServerCore.Main
         public string[] loggerFile;
         public string loggerTag;
         public System.Net.IPEndPoint tcp;
+        public bool tcpAllowJson;
         public System.Net.IPEndPoint udp;
+        public bool udpAllowJson;
         public string[] http;
+        public bool websocketAllowJson;
     }
 }

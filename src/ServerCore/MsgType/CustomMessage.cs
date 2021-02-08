@@ -5,19 +5,19 @@ using ArmyAntMessage.System;
 
 namespace ArmyAnt.ServerCore.MsgType
 {
-    public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new()
+    [System.Serializable]
+    public class CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new()
     {
-        public MessageBaseHead head;
         public long appid;
         public ConversationStepType conversationStepType;
         public T body;
 
-        public static byte[] PackMessage(int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg)
+        public static byte[] PackMessage(int conversationCode, int conversationStepIndex, MessageBaseHead head, CustomMessageSend<T> msg)
         {
             byte[] msg_byte = new byte[msg.body.CalculateSize()];
             var stream = new Google.Protobuf.CodedOutputStream(msg_byte);
             msg.body.WriteTo(stream);
-            switch (msg.head.extendVersion)
+            switch (head.extendVersion)
             {
                 case 1:
                     var extend = new SocketExtendNormal_V0_0_0_1
@@ -31,27 +31,22 @@ namespace ArmyAnt.ServerCore.MsgType
                     };
                     byte[] msg_extend = new byte[extend.CalculateSize()];
                     var extend_stream = new Google.Protobuf.CodedOutputStream(msg_extend);
-                    msg.head.extendLength = msg_extend.Length;
+                    head.extendLength = msg_extend.Length;
                     extend.WriteTo(extend_stream);
                     var ret = new List<byte>();
-                    ret.AddRange(msg.head.Byte);
+                    ret.AddRange(head.Byte);
                     ret.AddRange(msg_extend);
                     ret.AddRange(msg_byte);
                     return ret.ToArray();
             }
-            return default;
+            return null;
         }
     }
 
-    public struct CustomMessageReceived {
+    [System.Serializable]
+    public class CustomMessageReceived : CustomData
+    {
         public MessageBaseHead head;
-        public long appid;
-        public ConversationStepType conversationStepType;
-
-        public int contentLength;
-        public int messageCode;
-        public int conversationCode;
-        public int conversationStepIndex;
         public byte[] body;
 
         public static CustomMessageReceived ParseMessage(byte[] data) {
@@ -62,7 +57,6 @@ namespace ArmyAnt.ServerCore.MsgType
                     return new CustomMessageReceived {
                         head = head,
                         appid = msg.AppId,
-                        contentLength = msg.ContentLength,
                         messageCode = msg.MessageCode,
                         conversationCode = msg.ConversationCode,
                         conversationStepIndex = msg.ConversationStepIndex,
@@ -70,7 +64,7 @@ namespace ArmyAnt.ServerCore.MsgType
                         body = data.Skip(16 + head.extendLength).ToArray(),
                     };
             }
-            return default;
+            return null;
         }
     }
 }

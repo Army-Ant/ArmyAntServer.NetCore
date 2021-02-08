@@ -8,22 +8,19 @@ using ArmyAnt.ServerCore.MsgType;
 namespace ArmyAnt.ServerUnits {
     public class SimpleEchoApp : ISubUnit
     {
-        static SimpleEchoApp() {
-            codeDic.Add(typeof(C2SM_EchoLoginRequest), MessageBaseHead.GetNetworkMessageCode(C2SM_EchoLoginRequest.Descriptor));
-            codeDic.Add(typeof(C2SM_EchoLogoutRequest), MessageBaseHead.GetNetworkMessageCode(C2SM_EchoLogoutRequest.Descriptor));
-            codeDic.Add(typeof(C2SM_EchoSendRequest), MessageBaseHead.GetNetworkMessageCode(C2SM_EchoSendRequest.Descriptor));
-            codeDic.Add(typeof(C2SM_EchoBroadcastRequest), MessageBaseHead.GetNetworkMessageCode(C2SM_EchoBroadcastRequest.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoLoginResponse), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoLoginResponse.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoLogoutResponse), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoLogoutResponse.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoReceiveNotice), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoReceiveNotice.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoSendResponse), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoSendResponse.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoBroadcastResponse), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoBroadcastResponse.Descriptor));
-            codeDic.Add(typeof(SM2C_EchoError), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoError.Descriptor));
-        }
-
         public SimpleEchoApp(long appid, ServerCore.Main.Server server) {
             AppId = appid;
             Server = server;
+            server.EventManager.RegisterMessage(C2SM_EchoLoginRequest.Descriptor);
+            server.EventManager.RegisterMessage(C2SM_EchoLogoutRequest.Descriptor);
+            server.EventManager.RegisterMessage(C2SM_EchoSendRequest.Descriptor);
+            server.EventManager.RegisterMessage(C2SM_EchoBroadcastRequest.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoLoginResponse.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoLogoutResponse.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoReceiveNotice.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoSendResponse.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoBroadcastResponse.Descriptor);
+            server.EventManager.RegisterMessage(SM2C_EchoError.Descriptor);
         }
 
         public long AppId { get; }
@@ -35,15 +32,15 @@ namespace ArmyAnt.ServerUnits {
         public void OnTask<Input>(int _event, params Input[] data) {
         }
 
-        public void OnNetworkMessage(int code, CustomMessageReceived data, EndPointTask user) {
-            if(code == codeDic[typeof(C2SM_EchoLoginRequest)]) {
-                OnUserLogin(data.head, data.conversationCode, user, C2SM_EchoLoginRequest.Parser.ParseFrom(data.body));
-            } else if(code == codeDic[typeof(C2SM_EchoLogoutRequest)]) {
-                OnUserLogout(data.head, data.conversationCode, user, C2SM_EchoLogoutRequest.Parser.ParseFrom(data.body));
-            } else if(code == codeDic[typeof(C2SM_EchoSendRequest)]) {
-                OnUserSend(data.head, data.conversationCode, user, C2SM_EchoSendRequest.Parser.ParseFrom(data.body));
-            } else if(code == codeDic[typeof(C2SM_EchoBroadcastRequest)]) {
-                OnUserBroadcast(data.head, data.conversationCode, user, C2SM_EchoBroadcastRequest.Parser.ParseFrom(data.body));
+        public void OnNetworkMessage(int code, CustomData info, Google.Protobuf.IMessage data, EndPointTask user) {
+            if(data is C2SM_EchoLoginRequest) {
+                OnUserLogin(info.conversationCode, user, data as C2SM_EchoLoginRequest);
+            } else if(data is C2SM_EchoLogoutRequest) {
+                OnUserLogout(info.conversationCode, user, data as C2SM_EchoLogoutRequest);
+            } else if(data is C2SM_EchoSendRequest) {
+                OnUserSend(info.conversationCode, user, data as C2SM_EchoSendRequest);
+            } else if(data is C2SM_EchoBroadcastRequest) {
+                OnUserBroadcast(info.conversationCode, user, data as C2SM_EchoBroadcastRequest);
             } else {
                 Server.Log(IO.Logger.LogLevel.Warning, LOGGER_TAG, "Received an unknown message, code:", code, ", user:", user.ID);
             }
@@ -91,7 +88,7 @@ namespace ArmyAnt.ServerUnits {
             return Server.EventManager.GetTask(TaskId);
         }
 
-        private void OnUserLogin(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoLoginRequest message) {
+        private void OnUserLogin(int conversationCode, EndPointTask user, C2SM_EchoLoginRequest message) {
             var response = new SM2C_EchoLoginResponse();
             lock(loggedUsers) {
                 if(loggedUsers.ContainsKey(message.UserName)) { // User name has logged in !
@@ -106,14 +103,13 @@ namespace ArmyAnt.ServerUnits {
                 }
             }
             user.SendMessage(new CustomMessageSend<SM2C_EchoLoginResponse> {
-                head = head,
                 appid = AppId,
                 conversationStepType = ConversationStepType.ResponseEnd,
                 body = response,
             }, conversationCode);
         }
 
-        private void OnUserLogout(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoLogoutRequest message) {
+        private void OnUserLogout(int conversationCode, EndPointTask user, C2SM_EchoLogoutRequest message) {
             var response = new SM2C_EchoLogoutResponse();
             lock(loggedUsers) {
                 if(!loggedUsers.ContainsKey(message.UserName)) { // User name has not logged in !
@@ -128,14 +124,13 @@ namespace ArmyAnt.ServerUnits {
                 }
             }
             user.SendMessage(new CustomMessageSend<SM2C_EchoLogoutResponse> {
-                head = head,
                 appid = AppId,
                 conversationStepType = ConversationStepType.ResponseEnd,
                 body = response,
             }, conversationCode);
         }
 
-        private void OnUserSend(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoSendRequest message) {
+        private void OnUserSend(int conversationCode, EndPointTask user, C2SM_EchoSendRequest message) {
             var response = new SM2C_EchoSendResponse();
             SM2C_EchoReceiveNotice notice = null;
             string fromUser = null;
@@ -169,14 +164,12 @@ namespace ArmyAnt.ServerUnits {
             }
             response.Request = message;
             user.SendMessage(new CustomMessageSend<SM2C_EchoSendResponse> {
-                head = head,
                 appid = AppId,
                 conversationStepType = ConversationStepType.ResponseEnd,
                 body = response,
             }, conversationCode);
             if(notice != null) {
                 tarUser.SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
-                    head = head,
                     appid = AppId,
                     conversationStepType = ConversationStepType.NoticeOnly,
                     body = notice,
@@ -184,7 +177,7 @@ namespace ArmyAnt.ServerUnits {
             }
         }
 
-        private void OnUserBroadcast(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoBroadcastRequest message) {
+        private void OnUserBroadcast(int conversationCode, EndPointTask user, C2SM_EchoBroadcastRequest message) {
             var response = new SM2C_EchoBroadcastResponse();
             SM2C_EchoReceiveNotice notice = null;
             string fromUser = null;
@@ -211,7 +204,6 @@ namespace ArmyAnt.ServerUnits {
             }
             response.Request = message;
             user.SendMessage(new CustomMessageSend<SM2C_EchoBroadcastResponse> {
-                head = head,
                 appid = AppId,
                 conversationStepType = ConversationStepType.ResponseEnd,
                 body = response,
@@ -220,7 +212,6 @@ namespace ArmyAnt.ServerUnits {
                 lock(loggedUsers) {
                     foreach(var i in loggedUsers) {
                         Server.EventManager.GetUserSession(i.Value).SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
-                            head = head,
                             appid = AppId,
                             conversationStepType = ConversationStepType.NoticeOnly,
                             body = notice,
@@ -231,8 +222,6 @@ namespace ArmyAnt.ServerUnits {
         }
 
         private const string LOGGER_TAG = "SimpleEchoApp";
-
-        private static readonly IDictionary<System.Type, int> codeDic = new Dictionary<System.Type, int>();
 
         private IDictionary<string, long> loggedUsers = new Dictionary<string, long>();
     }

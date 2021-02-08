@@ -24,38 +24,44 @@ namespace ArmyAnt.ServerCore.Event {
             selfId = taskPool.AddTaskQueue(this);
         }
 
+        public void RegisterMessage(Google.Protobuf.Reflection.MessageDescriptor descriptor)
+        {
+            var code = descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            messageTypeDic[code] = descriptor;
+        }
+
         public void OnTask<Input>(int _event, params Input[] data) {
-            if(data[0] is LocalEventArg local) {
+            if (data[0] is LocalEventArg local) {
                 try {
                     localEventPool[_event]?.Invoke(_event, local);
-                } catch(KeyNotFoundException) {
+                } catch (KeyNotFoundException) {
                     OnKeyNotFoundLocalEvent?.Invoke(_event, local);
                 }
-            } else if(data[0] is CustomMessageReceived net) {
+            } else if (data[0] is CustomMessageReceived net) {
                 try {
                     networkEventPool[_event]?.Invoke(_event, net);
-                } catch(KeyNotFoundException) {
+                } catch (KeyNotFoundException) {
                     OnKeyNotFoundNetworkMessage?.Invoke(_event, net);
                 }
-            } else if(data[0] is long user && data.Length == 2 && data[1] is long check && check == 0) {
-                switch((SpecialEvent)_event) {
+            } else if (data[0] is long user && data.Length == 2 && data[1] is long check && check == 0) {
+                switch ((SpecialEvent)_event) {
                     case SpecialEvent.UserLogin:
-                    OnUserSessionLogin?.Invoke(user);
-                    break;
+                        OnUserSessionLogin?.Invoke(user);
+                        break;
                     case SpecialEvent.UserLogout:
-                    OnUserSessionLogout?.Invoke(user);
-                    break;
+                        OnUserSessionLogout?.Invoke(user);
+                        break;
                     case SpecialEvent.UserShutdown:
-                    OnUserSessionShutdown?.Invoke(user);
-                    break;
+                        OnUserSessionShutdown?.Invoke(user);
+                        break;
                     case SpecialEvent.UserDisconnected:
-                    OnUserSessionDisconnected?.Invoke(user);
-                    break;
+                        OnUserSessionDisconnected?.Invoke(user);
+                        break;
                     case SpecialEvent.UserReconnected:
-                    OnUserSessionReconnected?.Invoke(user);
-                    break;
+                        OnUserSessionReconnected?.Invoke(user);
+                        break;
                     default:
-                    break;
+                        break;
                 }
             } else {
                 OnUnknownEvent?.Invoke(_event, data.GetType(), data);
@@ -110,11 +116,11 @@ namespace ArmyAnt.ServerCore.Event {
 
         public void AddLocalEventListener(int code, Action<int, LocalEventArg> _event) {
             IsNotNull(_event);
-            lock(localEventPool) {
+            lock (localEventPool) {
                 try {
                     var tar = localEventPool[code];
                     tar.Add(_event);
-                } catch(KeyNotFoundException) {
+                } catch (KeyNotFoundException) {
                     var tar = new EventGroup<LocalEventArg>();
                     tar.Add(_event);
                     localEventPool.Add(code, tar);
@@ -123,7 +129,7 @@ namespace ArmyAnt.ServerCore.Event {
         }
         public void RemoveLocalEventListener(int code, Action<int, LocalEventArg> _event) {
             IsNotNull(_event);
-            lock(localEventPool) {
+            lock (localEventPool) {
                 localEventPool[code].Remove(_event);
             }
         }
@@ -136,11 +142,11 @@ namespace ArmyAnt.ServerCore.Event {
 
         public void AddNetworkMessageListener(int code, Action<int, CustomMessageReceived> _event) {
             IsNotNull(_event);
-            lock(networkEventPool) {
+            lock (networkEventPool) {
                 try {
                     var tar = networkEventPool[code];
                     tar.Add(_event);
-                } catch(KeyNotFoundException) {
+                } catch (KeyNotFoundException) {
                     var tar = new EventGroup<CustomMessageReceived>();
                     tar.Add(_event);
                     networkEventPool.Add(code, tar);
@@ -149,12 +155,36 @@ namespace ArmyAnt.ServerCore.Event {
         }
         public void RemoveNetworkMessageListener(int code, Action<int, CustomMessageReceived> _event) {
             IsNotNull(_event);
-            lock(networkEventPool) {
+            lock (networkEventPool) {
                 networkEventPool[code].Remove(_event);
             }
         }
+
         public bool DispatchNetworkMessage(int code, CustomMessageReceived data) => taskPool.EnqueueTaskTo(selfId, code, data);
-        public bool DispatchNetworkMessage(int code, long userId, CustomMessageReceived data) => taskPool.EnqueueTaskTo(userId, code, data);
+
+        public bool DispatchNetworkMessage(int code, long userId, CustomData data, string json)
+        {
+            if (!messageTypeDic.ContainsKey(code))
+            {
+                return false;
+            }
+            else
+            {
+                return taskPool.EnqueueTaskTo<object>(userId, code, data, messageTypeDic[code].Parser.ParseJson(json));
+            }
+        }
+
+        public bool DispatchNetworkMessage(int code, long userId, CustomMessageReceived data)
+        {
+            if (!messageTypeDic.ContainsKey(code))
+            {
+                return false;
+            }
+            else
+            {
+                return taskPool.EnqueueTaskTo<object>(userId, code, data, messageTypeDic[code].Parser.ParseFrom(data.body), data.head);
+            }
+        }
 
         #endregion
 
@@ -184,5 +214,6 @@ namespace ArmyAnt.ServerCore.Event {
         private readonly Thread.TaskPool<int> taskPool = new Thread.TaskPool<int>();
         private readonly IDictionary<int, EventGroup<LocalEventArg>> localEventPool = new Dictionary<int, EventGroup<LocalEventArg>>();
         private readonly IDictionary<int, EventGroup<CustomMessageReceived>> networkEventPool = new Dictionary<int, EventGroup<CustomMessageReceived>>();
+        private readonly IDictionary<int, Google.Protobuf.Reflection.MessageDescriptor> messageTypeDic = new Dictionary<int, Google.Protobuf.Reflection.MessageDescriptor>();
     }
 }

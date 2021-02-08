@@ -42,89 +42,90 @@ namespace ArmyAnt.ServerCore.Event
         public void OnLocalEvent<T>(int code, T data) {
         }
 
-        public void OnNetworkMessage(int code, CustomMessageReceived data) {
+        public void OnNetworkMessage(int code, MessageBaseHead head, CustomData info, Google.Protobuf.IMessage data) {
             bool contain;
             bool stepEqual = false;
             lock(conversationWaitingList) {
-                contain = conversationWaitingList.ContainsKey(data.conversationCode);
+                contain = conversationWaitingList.ContainsKey(info.conversationCode);
                 if(contain) {
-                    stepEqual = conversationWaitingList[data.conversationCode] == data.conversationStepIndex;
+                    stepEqual = conversationWaitingList[info.conversationCode] == info.conversationStepIndex;
                 }
             }
             // Checking message step data
-            switch(data.conversationStepType) {
+            switch(info.conversationStepType) {
                 case ConversationStepType.NoticeOnly:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
                         return;
-                    } else if(data.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", ID, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                    } else if(info.conversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
                         return;
                     }
                     break;
                 case ConversationStepType.AskFor:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
                         return;
-                    } else if(data.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", ID, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                    } else if(info.conversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
                         return;
                     } else {
                         // Record the ask-for
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Add(data.conversationCode, 0);
+                            conversationWaitingList.Add(info.conversationCode, 0);
                         }
                     }
                     break;
                 case ConversationStepType.StartConversation:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
                         return;
-                    } else if(data.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", ID, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                    } else if(info.conversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
                         return;
                     } else {
                         // Record the conversation
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Add(data.conversationCode, 1);
+                            conversationWaitingList.Add(info.conversationCode, 1);
                         }
                     }
                     break;
                 case ConversationStepType.ConversationStepOn:
                     if(!contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
                         return;
                     } else if(!stepEqual) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", ID, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
                         return;
                     } else {
                         // Record the conversation step
                         lock(conversationWaitingList) {
-                            conversationWaitingList[data.conversationCode] = 1 + conversationWaitingList[data.conversationCode];
+                            conversationWaitingList[info.conversationCode] = 1 + conversationWaitingList[info.conversationCode];
                         }
                     }
                     break;
                 case ConversationStepType.ResponseEnd:
                     if(!contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", data.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
                         return;
-                    } else if(stepEqual && data.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", ID, " , message code: ", code, " , conversation step: ", data.conversationStepIndex);
+                    } else if(stepEqual && info.conversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
                         return;
                     } else {
                         // Remove the waiting data
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Remove(data.conversationCode);
+                            conversationWaitingList.Remove(info.conversationCode);
                         }
                     }
                     break;
                 default:
-                    app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", ID, " , message code: ", code, " , conversation type: ", (long)data.conversationStepType);
+                    app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", ID, " , message code: ", code, " , conversation type: ", (long)info.conversationStepType);
                     return;
             }
 
-            var subApp = app.GetSubApplication(data.appid);
-            subApp?.OnNetworkMessage(code, data, this);
+            var subApp = app.GetSubApplication(info.appid);
+            lastHead = head;
+            subApp?.OnNetworkMessage(code, info, data, this);
         }
 
         public void OnUnknownEvent<T>(int _event, params T[] data) {
@@ -163,9 +164,10 @@ namespace ArmyAnt.ServerCore.Event
             {
                 OnLocalEvent(_event, local);
             }
-            else if (data[0] is CustomMessageReceived net)
+            else if (data[0] is CustomData info && data.Length == 3 && data[1] is Google.Protobuf.IMessage net)
             {
-                OnNetworkMessage(_event, net);
+
+                OnNetworkMessage(_event, data[2] as MessageBaseHead, info, net);
             }
             else if (data[0] is int user && data.Length == 2 && data[1] is int check && check == 0)
             {
@@ -262,13 +264,15 @@ namespace ArmyAnt.ServerCore.Event
                 }
             }
 
-            app.Send(NetworkType, ID, conversationCode, conversationStepIndex, msg);
+            app.Send(NetworkType, ID, conversationCode, conversationStepIndex, lastHead, msg);
             return true;
         }
 
         private Main.Server app;
 
         private IDictionary<int, int> conversationWaitingList = new Dictionary<int, int>();
+
+        private MessageBaseHead lastHead;
 
         private const string LOGGER_TAG = "Main EndPointTask Session";
     }

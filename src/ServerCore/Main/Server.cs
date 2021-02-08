@@ -150,7 +150,7 @@ namespace ArmyAnt.ServerCore.Main {
             logger.WriteLine(lv, " [ ", Tag, " ] ", content);
         }
 
-        public void Send<T>(NetworkType type, long userId, int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage<T>, new() {
+        public void Send<T>(NetworkType type, long userId, int conversationCode, int conversationStepIndex, MessageBaseHead head, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage<T>, new() {
             int index = 0;
             byte[] sending;
             switch(type) {
@@ -162,7 +162,7 @@ namespace ArmyAnt.ServerCore.Main {
                     }
                     index = tcpSocketIndexList[userId];
                 }
-                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, msg);
+                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, head, msg);
                 sendingTasks.Add(tcpServer.Send(index, sending));
                 break;
                 case NetworkType.Websocket:
@@ -173,7 +173,7 @@ namespace ArmyAnt.ServerCore.Main {
                     }
                     index = webSocketIndexList[userId];
                 }
-                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, msg);
+                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, head, msg);
                 sendingTasks.Add(httpServer.Send(index, sending));
                 break;
             }
@@ -223,6 +223,15 @@ namespace ArmyAnt.ServerCore.Main {
                     return;
                 }
                 userId = tcpSocketUserList[index].ID;
+            }
+            if (options.tcpAllowJson)
+            {
+                var (jsonBase, jsonStr) = CustomJson.DeserializeBase(data);
+                if(jsonBase != null)
+                {
+                    OnJson(userId, jsonBase, jsonStr);
+                    return;
+                }
             }
             var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
@@ -277,14 +286,37 @@ namespace ArmyAnt.ServerCore.Main {
                 }
                 userId = webSocketUserList[index].ID;
             }
+            if (options.websocketAllowJson)
+            {
+                var (jsonBase, jsonStr) = CustomJson.DeserializeBase(data);
+                if (jsonBase != null)
+                {
+                    OnJson(userId, jsonBase, jsonStr);
+                    return;
+                }
+            }
             var msg = CustomMessageReceived.ParseMessage(data);
             OnMessage(userId, msg);
         }
 
 
-        private void OnMessage(long userId, CustomMessageReceived msg) {
+        private void OnJson(long userId, CustomData jsonBase, string jsonStr)
+        {
+            Log(Logger.LogLevel.Verbose, LoggerTag, "Received from user id: ", userId, ", appid: " + jsonBase.appid);
+            if (!EventManager.IsUserIn(userId))
+            {
+                Log(Logger.LogLevel.Warning, LoggerTag, "Cannot find the user session: ", userId, " when resolving the message");
+                return;
+            }
+            EventManager.DispatchNetworkMessage(jsonBase.messageCode, userId, jsonBase, jsonStr);
+        }
+
+
+        private void OnMessage(long userId, CustomMessageReceived msg)
+        {
             Log(Logger.LogLevel.Verbose, LoggerTag, "Received from user id: ", userId, ", appid: " + msg.appid);
-            if(!EventManager.IsUserIn(userId)) {
+            if (!EventManager.IsUserIn(userId))
+            {
                 Log(Logger.LogLevel.Warning, LoggerTag, "Cannot find the user session: ", userId, " when resolving the message");
                 return;
             }

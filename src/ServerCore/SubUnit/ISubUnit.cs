@@ -13,6 +13,6 @@ namespace ArmyAnt.ServerCore.SubUnit {
         void OnUserSessionShutdown(long userId);
         void OnUserSessionDisconnected(long userId);
         void OnUserSessionReconnected(long userId);
-        void OnNetworkMessage(int code, CustomMessageReceived data, Event.EndPointTask user);
+        void OnNetworkMessage(int code, CustomData info, Google.Protobuf.IMessage data, Event.EndPointTask user);
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ArmyAnt.ServerCore.MsgType
 {
@@ -12,8 +11,8 @@ namespace ArmyAnt.ServerCore.MsgType
         Json,
     }
 
-    [System.Serializable]
-    public struct MessageBaseHead
+    [Serializable]
+    public class MessageBaseHead
     {
         public int serials;
         public MessageType type;
