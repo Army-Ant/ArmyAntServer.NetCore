@@ -10,7 +10,7 @@
     <Company>ArmyAnt Org</Company>
     <Product>ArmyAntDBProxy</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <StartupObject>ArmyAnt.Server.DBProxy.Program</StartupObject>
+    <StartupObject>ArmyAnt.ServerUnits.DBProxy.Program</StartupObject>
     <PackageId>com.armyant.dbproxy</PackageId>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
@@ -24,13 +24,6 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DBProxyCore\DBProxyCore.csproj" />

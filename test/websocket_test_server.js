@@ -2,12 +2,12 @@
  * Created by Jason on 2016/5/31.
  */
 "use strict";
-import libArmyAnt from "./ArmyAnt.js/libArmyAnt.js"
+import HTTPServer from "./ArmyAnt.js/scripts/node.js_extend/httpServer"
 
 let serverHost = {
     onStart: function () {
-        let svr = new libArmyAnt.HttpServer();
-        let ret = svr.start(8088);
+        let svr = new HTTPServer();
+        svr.start(8088);
     },
 
     onTest: function () {

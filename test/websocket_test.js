@@ -1,7 +1,5 @@
 ﻿'use strict'
 
-import libArmyAnt from "./ArmyAnt.js/libArmyAnt.js"
-
 let websocket_tester = {
 	_ws:null,
 	_loginName:null,

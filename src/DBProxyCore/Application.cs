@@ -3,8 +3,9 @@ using System.Net;
 using System.Threading.Tasks;
 using ArmyAnt.IO;
 using ArmyAnt.Network;
+using ArmyAnt.ServerCore;
 
-namespace ArmyAnt.Server.DBProxy {
+namespace ArmyAnt.ServerUnits.DBProxy {
     public class Application {
 
         public Application(Logger.LogLevel consoleLevel, Logger.LogLevel fileLevel, params string[] loggerFile) {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using static ArmyAnt.Utilities;
 
-namespace ArmyAnt.Server.Event {
+namespace ArmyAnt.ServerCore.Event {
     #region delegates
     public delegate bool OnKeyNotFoundLocalEvent(int _event, LocalEventArg data);
     public delegate void OnKeyNotFoundNetworkMessage(int _event, CustomMessageReceived us);
@@ -18,9 +18,7 @@ namespace ArmyAnt.Server.Event {
     }
 
     public class EventManager : Thread.TaskPool<int>.ITaskQueue {
-        public Gate.Application ParentApp { get; }
-        public EventManager(Gate.Application parent) {
-            ParentApp = parent;
+        public EventManager() {
             selfId = taskPool.AddTaskQueue(this);
         }
 
@@ -70,10 +68,10 @@ namespace ArmyAnt.Server.Event {
 
         #region User sessions operation
 
-        public long AddUserSession(IUserSession user) => taskPool.AddTaskQueue(IsNotNull(user));
+        public long AddUserSession(EndPointTask user) => taskPool.AddTaskQueue(IsNotNull(user));
         public async System.Threading.Tasks.Task<bool> RemoveUserSession(long userId) => await taskPool.RemoveTaskQueue(userId);
         public bool IsUserIn(long index) => taskPool.IsTaskQueueExist(index);
-        public IUserSession GetUserSession(long index) => taskPool.GetQueue(index) as IUserSession;
+        public EndPointTask GetUserSession(long index) => taskPool.GetQueue(index) as EndPointTask;
         public void SetSessionOnline(long index) {
             taskPool.EnqueueTaskTo(selfId, (int)SpecialEvent.UserLogin, index, 0);
             taskPool.EnqueueTaskTo(index, (int)SpecialEvent.UserLogin, index);
@@ -99,10 +97,10 @@ namespace ArmyAnt.Server.Event {
 
         #region SubApplications
 
-        public long AddSubApplicationTask(ISubApplication app) => taskPool.AddTaskQueue(IsNotNull(app));
+        public long AddSubApplicationTask(SubUnit.ISubUnit app) => taskPool.AddTaskQueue(IsNotNull(app));
         public async System.Threading.Tasks.Task<bool> RemoveSubApplicationTask(long appTaskId) => await taskPool.RemoveTaskQueue(appTaskId);
         public bool IsSubApplicationIn(long taskId) => taskPool.IsTaskQueueExist(taskId);
-        public ISubApplication GetSubApplication(long taskId) => taskPool.GetQueue(taskId) as ISubApplication;
+        public SubUnit.ISubUnit GetSubApplication(long taskId) => taskPool.GetQueue(taskId) as SubUnit.ISubUnit;
 
         #endregion
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace ArmyAnt.Server.DBProxy {
+namespace ArmyAnt.ServerUnits.DBProxy {
     static class Program {
         public enum ReturnCode {
             //ServerStartFailed = -5,
