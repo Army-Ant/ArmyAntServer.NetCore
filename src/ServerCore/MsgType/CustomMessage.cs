@@ -1,96 +1,34 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 
+using ArmyAntMessage.System;
+
 namespace ArmyAnt.ServerCore.MsgType
 {
-    public enum MessageType : int {
-        Unknown,
-        Protobuf,
-        File,
-        Json,
-    }
-
-    [System.Serializable]
-    public struct MessageBaseHead {
-        public int serials;
-        public MessageType type;
-        public int extendVersion;
-        public int extendLength;
-        public MessageBaseHead(byte[] wholeMessage) {
-            serials = 0;
-            type = MessageType.Protobuf;
-            extendVersion = 1;
-            extendLength = 1;
-            Byte = wholeMessage;
-        }
-        public MessageBaseHead(int serials, MessageType type, int extendVersion, int extendLength) {
-            this.serials = serials;
-            this.type = type;
-            this.extendVersion = extendVersion;
-            this.extendLength = extendLength;
-        }
-        public byte[] Byte {
-            get {
-                var serialsBytes = System.BitConverter.GetBytes(serials);
-                var typeBytes = System.BitConverter.GetBytes((int)type);
-                var extendVersionBytes = System.BitConverter.GetBytes(extendVersion);
-                var extendLengthBytes = System.BitConverter.GetBytes(extendLength);
-                if(!System.BitConverter.IsLittleEndian) {
-                    System.Array.Reverse(serialsBytes);
-                    System.Array.Reverse(typeBytes);
-                    System.Array.Reverse(extendVersionBytes);
-                    System.Array.Reverse(extendLengthBytes);
-                }
-                var ret = new List<byte>();
-                ret.AddRange(serialsBytes);
-                ret.AddRange(typeBytes);
-                ret.AddRange(extendVersionBytes);
-                ret.AddRange(extendLengthBytes);
-                return ret.ToArray();
-            }
-            set {
-                if(System.BitConverter.IsLittleEndian) {
-                    serials = System.BitConverter.ToInt32(value, 0);
-                    type = (MessageType)System.BitConverter.ToInt32(value, 4);
-                    extendVersion = System.BitConverter.ToInt32(value, 8);
-                    extendLength = System.BitConverter.ToInt32(value, 12);
-                } else {
-                    byte[] reversed = new byte[12];
-                    for(var i = 0; i < 12; ++i) {
-                        reversed[i] = value[15 - i];
-                    }
-                    extendLength = System.BitConverter.ToInt32(value, 0);
-                    extendVersion = System.BitConverter.ToInt32(value, 4);
-                    type = (MessageType)System.BitConverter.ToInt32(value, 8);
-                    serials = System.BitConverter.ToInt32(value, 12);
-                }
-            }
-        }
-        public static int GetNetworkMessageCode<T>(T msg) where T : Google.Protobuf.IMessage => GetNetworkMessageCode(msg.Descriptor);
-        public static int GetNetworkMessageCode(Google.Protobuf.Reflection.MessageDescriptor msg) => msg.GetOptions().GetExtension(BaseExtensions.MsgCode);
-    }
-
-    public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new() {
+    public struct CustomMessageSend<T> where T : Google.Protobuf.IMessage<T>, new()
+    {
         public MessageBaseHead head;
         public long appid;
-        public ArmyAntMessage.System.ConversationStepType conversationStepType;
+        public ConversationStepType conversationStepType;
         public T body;
 
-        public static byte[] PackMessage(int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg) {
+        public static byte[] PackMessage(int conversationCode, int conversationStepIndex, CustomMessageSend<T> msg)
+        {
             byte[] msg_byte = new byte[msg.body.CalculateSize()];
             var stream = new Google.Protobuf.CodedOutputStream(msg_byte);
             msg.body.WriteTo(stream);
-            //var parser = new Google.Protobuf.MessageParser<T>(() => new T());
-            //var reparse = parser.ParseFrom(msg_byte);
-            switch(msg.head.extendVersion) {
+            switch (msg.head.extendVersion)
+            {
                 case 1:
-                    var extend = new ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1();
-                    extend.AppId = msg.appid;
-                    extend.ConversationCode = conversationCode;
-                    extend.ConversationStepType = msg.conversationStepType;
-                    extend.ConversationStepIndex = conversationStepIndex;
-                    extend.ContentLength = msg_byte.Length;
-                    extend.MessageCode = MessageBaseHead.GetNetworkMessageCode(msg.body);
+                    var extend = new SocketExtendNormal_V0_0_0_1
+                    {
+                        AppId = msg.appid,
+                        ConversationCode = conversationCode,
+                        ConversationStepType = msg.conversationStepType,
+                        ConversationStepIndex = conversationStepIndex,
+                        ContentLength = msg_byte.Length,
+                        MessageCode = MessageBaseHead.GetNetworkMessageCode(msg.body)
+                    };
                     byte[] msg_extend = new byte[extend.CalculateSize()];
                     var extend_stream = new Google.Protobuf.CodedOutputStream(msg_extend);
                     msg.head.extendLength = msg_extend.Length;
@@ -108,18 +46,19 @@ namespace ArmyAnt.ServerCore.MsgType
     public struct CustomMessageReceived {
         public MessageBaseHead head;
         public long appid;
+        public ConversationStepType conversationStepType;
+
         public int contentLength;
         public int messageCode;
         public int conversationCode;
         public int conversationStepIndex;
-        public ArmyAntMessage.System.ConversationStepType conversationStepType;
         public byte[] body;
 
         public static CustomMessageReceived ParseMessage(byte[] data) {
             var head = new MessageBaseHead(data);
             switch(head.extendVersion) {
                 case 1:
-                    var msg = ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1.Parser.ParseFrom(data, 16, head.extendLength);
+                    var msg = SocketExtendNormal_V0_0_0_1.Parser.ParseFrom(data, 16, head.extendLength);
                     return new CustomMessageReceived {
                         head = head,
                         appid = msg.AppId,

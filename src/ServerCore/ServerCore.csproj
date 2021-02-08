@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>ServerCore</AssemblyName>
-    <RootNamespace>ArmyAnt.Server</RootNamespace>
+    <RootNamespace>ArmyAnt.ServerCore</RootNamespace>
     <Version>0.0.1</Version>
     <Company>ArmyAnt Org</Company>
     <Authors>Jason Zhao Jie</Authors>
@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\external\ArmyAnt.Net\ArmyAnt.Net.csproj" />
+    <ProjectReference Include="..\..\external\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\ProtoRes\ProtoRes.csproj" />
   </ItemGroup>
 

@@ -15,3 +15,6 @@
 [submodule "external/ArmyAnt.js"]
 	path = external/ArmyAnt.js
 	url = https://github.com/Army-Ant/ArmyAnt.js.git
+[submodule "external/Newtonsoft.Json"]
+	path = external/Newtonsoft.Json
+	url = https://github.com/JamesNK/Newtonsoft.Json.git

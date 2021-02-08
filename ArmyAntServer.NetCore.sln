@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "5.servers", "5.servers", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.resources", "2.resources", "{8EFA5F5A-5E71-4A6F-B15A-C75B01F56996}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Newtonsoft.Json", "external\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj", "{D792A26D-3E44-4495-9F68-8498B450E51B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D792A26D-3E44-4495-9F68-8498B450E51B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D792A26D-3E44-4495-9F68-8498B450E51B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D792A26D-3E44-4495-9F68-8498B450E51B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D792A26D-3E44-4495-9F68-8498B450E51B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,6 +86,7 @@ Global
 		{56597BAC-C4C8-4F7F-8EB8-1EF790471B9F} = {C4192722-C17B-4F1A-8C93-C9716705258F}
 		{CCE00D9E-E177-4BBF-B752-5970274C10C4} = {9942BCDA-75EB-4977-936D-F9833BDE9046}
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321} = {C4192722-C17B-4F1A-8C93-C9716705258F}
+		{D792A26D-3E44-4495-9F68-8498B450E51B} = {C4192722-C17B-4F1A-8C93-C9716705258F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {038EC8AE-4EF0-4352-A4AD-ECC228907A0A}

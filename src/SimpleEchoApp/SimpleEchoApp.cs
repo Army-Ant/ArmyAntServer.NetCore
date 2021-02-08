@@ -57,12 +57,12 @@ namespace ArmyAnt.ServerUnits {
                         userName = i.Key;
                     }
                 }
-                if(userName != null) { // EndPointTask name has logged in 
+                if(userName != null) { // User name has logged in 
                     loggedUsers.Remove(userName);
                 }
             }
-            if(userName != null) { // EndPointTask name has logged in 
-                Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "EndPointTask disconnected: ", userName);
+            if(userName != null) { // User name has logged in 
+                Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "User disconnected: ", userName);
             }
         }
 
@@ -94,15 +94,15 @@ namespace ArmyAnt.ServerUnits {
         private void OnUserLogin(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoLoginRequest message) {
             var response = new SM2C_EchoLoginResponse();
             lock(loggedUsers) {
-                if(loggedUsers.ContainsKey(message.UserName)) { // EndPointTask name has logged in !
+                if(loggedUsers.ContainsKey(message.UserName)) { // User name has logged in !
                     response.Result = 3;    // failed
                     response.Message = "The user of this name has logged in";
-                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "EndPointTask logged failed with an existed name: ", message.UserName);
+                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "User logged failed with an existed name: ", message.UserName);
                 } else {
                     response.Result = 0;
                     response.Message = "Login successful !";
                     loggedUsers.Add(message.UserName, user.ID);
-                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "EndPointTask login: ", message.UserName);
+                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User login: ", message.UserName);
                 }
             }
             user.SendMessage(new CustomMessageSend<SM2C_EchoLoginResponse> {
@@ -116,15 +116,15 @@ namespace ArmyAnt.ServerUnits {
         private void OnUserLogout(MessageBaseHead head, int conversationCode, EndPointTask user, C2SM_EchoLogoutRequest message) {
             var response = new SM2C_EchoLogoutResponse();
             lock(loggedUsers) {
-                if(!loggedUsers.ContainsKey(message.UserName)) { // EndPointTask name has not logged in !
+                if(!loggedUsers.ContainsKey(message.UserName)) { // User name has not logged in !
                     response.Result = 3;    // failed
                     response.Message = "The user of this name has not logged in";
-                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "EndPointTask logged out failed with an inexisted name: ", message.UserName);
+                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "User logged out failed with an inexisted name: ", message.UserName);
                 } else {
                     response.Result = 0;
                     response.Message = "Logout successful !";
                     loggedUsers.Remove(message.UserName);
-                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "EndPointTask log out: ", message.UserName);
+                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User log out: ", message.UserName);
                 }
             }
             user.SendMessage(new CustomMessageSend<SM2C_EchoLogoutResponse> {
@@ -153,13 +153,13 @@ namespace ArmyAnt.ServerUnits {
                 } else if(!loggedUsers.ContainsKey(message.Target) || !Server.EventManager.IsUserIn(loggedUsers[message.Target])) {
                     response.Result = 4;    // failed, unknown target user
                     response.Message = "The user of this name has not logged in";
-                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "EndPointTask ", fromUser, " want to sended a message to an inexist user: ", message.Target);
+                    Server.Log(IO.Logger.LogLevel.Info, LOGGER_TAG, "User ", fromUser, " want to sended a message to an inexist user: ", message.Target);
                 } else {
                     var tarUserId = loggedUsers[message.Target];
-                    tarUser = Server.EventManager.GetUserSession(tarUserId) as EndPointTask;
+                    tarUser = Server.EventManager.GetUserSession(tarUserId);
                     response.Result = 0;    // successful
                     response.Message = "Send successful !";
-                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "EndPointTask ", fromUser, " sended a message to user: ", message.Target);
+                    Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a message to user: ", message.Target);
                     notice = new SM2C_EchoReceiveNotice() {
                         IsBroadcast = false,
                         From = fromUser,
@@ -202,7 +202,7 @@ namespace ArmyAnt.ServerUnits {
             } else {
                 response.Result = 0;    // successful
                 response.Message = "Send successful !";
-                Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "EndPointTask ", fromUser, " sended a broadcast message");
+                Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a broadcast message");
                 notice = new SM2C_EchoReceiveNotice() {
                     IsBroadcast = true,
                     From = fromUser,
@@ -219,7 +219,7 @@ namespace ArmyAnt.ServerUnits {
             if(notice != null) {
                 lock(loggedUsers) {
                     foreach(var i in loggedUsers) {
-                        (Server.EventManager.GetUserSession(i.Value) as EndPointTask).SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
+                        Server.EventManager.GetUserSession(i.Value).SendMessage(new CustomMessageSend<SM2C_EchoReceiveNotice> {
                             head = head,
                             appid = AppId,
                             conversationStepType = ConversationStepType.NoticeOnly,

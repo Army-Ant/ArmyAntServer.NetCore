@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>SimpleEchoApp</AssemblyName>
-    <RootNamespace>ArmyAnt.Server.SubApplication</RootNamespace>
+    <RootNamespace>ArmyAnt.ServerUnits</RootNamespace>
     <Version>0.0.1</Version>
     <Company>ArmyAnt Org</Company>
     <Authors>Jason Zhao Jie</Authors>
