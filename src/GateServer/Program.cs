@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace ArmyAnt.Server
+namespace ArmyAnt.GateServer
 {
     static class Program
     {

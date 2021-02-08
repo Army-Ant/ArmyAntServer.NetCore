@@ -1,30 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>DBProxyCore</AssemblyName>
-    <RootNamespace>ArmyAnt.Server.DBProxy</RootNamespace>
+    <AssemblyName>DBProxyServer</AssemblyName>
+    <RootNamespace>ArmyAnt.DBProxyServer</RootNamespace>
     <Version>0.0.1</Version>
-    <Company>ArmyAnt Org</Company>
     <Authors>Jason Zhao Jie</Authors>
-    <Product>ArmyAntServer</Product>
+    <Company>ArmyAnt Org</Company>
+    <Product>ArmyAntDBProxyServer</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageId>com.armyant.server.dbproxycore</PackageId>
-    <Platforms>AnyCPU;x64</Platforms>
+    <StartupObject>ArmyAnt.DBProxyServer.Program</StartupObject>
+    <PackageId>com.armyant.dbproxyserver</PackageId>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\external\ArmyAnt.Net\ArmyAnt.Net.csproj" />
     <ProjectReference Include="..\..\external\MySqlConnector\src\MySqlConnector\MySqlConnector.csproj" />
-    <ProjectReference Include="..\ProtoRes\ProtoRes.csproj" />
+    <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
   </ItemGroup>
 
 </Project>

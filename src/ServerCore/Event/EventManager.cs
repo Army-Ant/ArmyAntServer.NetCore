@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ArmyAnt.ServerCore.MsgType;
+
+using System;
 using System.Collections.Generic;
 using static ArmyAnt.Utilities;
 

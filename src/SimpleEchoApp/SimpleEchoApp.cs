@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using ArmyAnt.ServerCore;
-using ArmyAnt.ServerCore.Main;
 using ArmyAnt.ServerCore.Event;
 using ArmyAnt.ServerCore.SubUnit;
 using ArmyAntMessage.System;
 using ArmyAntMessage.SubApps;
+using ArmyAnt.ServerCore.MsgType;
 
 namespace ArmyAnt.ServerUnits {
     public class SimpleEchoApp : ISubUnit
@@ -22,14 +21,14 @@ namespace ArmyAnt.ServerUnits {
             codeDic.Add(typeof(SM2C_EchoError), MessageBaseHead.GetNetworkMessageCode(SM2C_EchoError.Descriptor));
         }
 
-        public SimpleEchoApp(long appid, Server server) {
+        public SimpleEchoApp(long appid, ServerCore.Main.Server server) {
             AppId = appid;
             Server = server;
         }
 
         public long AppId { get; }
 
-        public Server Server { get; }
+        public ServerCore.Main.Server Server { get; }
 
         public long TaskId { get; set; }
 

@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 
-namespace ArmyAnt.ServerCore
+namespace ArmyAnt.ServerCore.MsgType
 {
     public enum MessageType : int {
         Unknown,

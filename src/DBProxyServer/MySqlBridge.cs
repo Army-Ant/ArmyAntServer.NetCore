@@ -4,7 +4,7 @@ using ArmyAnt.IO;
 
 using MySqlConnector;
 
-namespace ArmyAnt.ServerUnits.DBProxy {
+namespace ArmyAnt.DBProxyServer {
     public class MySqlBridge : SqlClient {
         public struct ConnectOptions {
             public string serverAddress;
