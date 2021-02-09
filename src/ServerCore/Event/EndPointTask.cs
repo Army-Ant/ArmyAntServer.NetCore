@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using ArmyAnt.IO;
 using ArmyAntMessage.System;
-using ArmyAnt.ServerCore.MsgType;
+using ArmyAnt.MsgType;
 
 namespace ArmyAnt.ServerCore.Event
 {
@@ -18,6 +18,13 @@ namespace ArmyAnt.ServerCore.Event
     public class LocalEventArg : EventArgs
     {
         public int code;
+    }
+
+    public class ConversationStatus
+    {
+        public int code;
+        public MessageType type;
+        public int stepIndex;
     }
 
     public enum SessionStatus
@@ -37,95 +44,104 @@ namespace ArmyAnt.ServerCore.Event
             NetworkType = clientType;
         }
 
+        public MessageType msgType { get; set; }
+
         public Network.NetworkType NetworkType { get; }
 
         public void OnLocalEvent<T>(int code, T data) {
         }
 
-        public void OnNetworkMessage(int code, MessageBaseHead head, CustomData info, Google.Protobuf.IMessage data) {
+        public void OnNetworkMessage(int code, SocketHeadExtend extend, Google.Protobuf.IMessage data) {
             bool contain;
             bool stepEqual = false;
             lock(conversationWaitingList) {
-                contain = conversationWaitingList.ContainsKey(info.conversationCode);
+                contain = conversationWaitingList.ContainsKey(extend.ConversationCode);
                 if(contain) {
-                    stepEqual = conversationWaitingList[info.conversationCode] == info.conversationStepIndex;
+                    stepEqual = conversationWaitingList[extend.ConversationCode].stepIndex == extend.ConversationStepIndex;
                 }
             }
             // Checking message step data
-            switch(info.conversationStepType) {
+            switch(extend.ConversationStepType) {
                 case ConversationStepType.NoticeOnly:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Notice should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", extend.ConversationCode);
                         return;
-                    } else if(info.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
+                    } else if(extend.ConversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for notice, user: ", ID, " , message code: ", code, " , conversation step: ", extend.ConversationStepIndex);
                         return;
                     }
                     break;
                 case ConversationStepType.AskFor:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Ask-for should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", extend.ConversationCode);
                         return;
-                    } else if(info.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
+                    } else if(extend.ConversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for ask-for, user: ", ID, " , message code: ", code, " , conversation step: ", extend.ConversationStepIndex);
                         return;
                     } else {
                         // Record the ask-for
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Add(info.conversationCode, 0);
+                            conversationWaitingList.Add(extend.ConversationCode, new ConversationStatus
+                            {
+                                code = extend.ConversationCode,
+                                stepIndex = 0,
+                            });
                         }
                     }
                     break;
                 case ConversationStepType.StartConversation:
                     if(contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-start should not has the same code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", extend.ConversationCode);
                         return;
-                    } else if(info.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
+                    } else if(extend.ConversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-start, user: ", ID, " , message code: ", code, " , conversation step: ", extend.ConversationStepIndex);
                         return;
                     } else {
                         // Record the conversation
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Add(info.conversationCode, 1);
+                            conversationWaitingList.Add(extend.ConversationCode, new ConversationStatus
+                            {
+                                code = extend.ConversationCode,
+                                stepIndex = 1,
+                            });
                         }
                     }
                     break;
                 case ConversationStepType.ConversationStepOn:
                     if(!contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Conversation-step should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", extend.ConversationCode);
                         return;
                     } else if(!stepEqual) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for conversation-step, user: ", ID, " , message code: ", code, " , conversation step: ", extend.ConversationStepIndex);
                         return;
                     } else {
                         // Record the conversation step
                         lock(conversationWaitingList) {
-                            conversationWaitingList[info.conversationCode] = 1 + conversationWaitingList[info.conversationCode];
+                            conversationWaitingList[extend.ConversationCode].stepIndex = 1 + conversationWaitingList[extend.ConversationCode].stepIndex;
                         }
                     }
                     break;
                 case ConversationStepType.ResponseEnd:
                     if(!contain) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", info.conversationCode);
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "The end should has the past data code in waiting list, user: ", ID, " , message code: ", code, " , conversation code: ", extend.ConversationCode);
                         return;
-                    } else if(stepEqual && info.conversationStepIndex != 0) {
-                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", ID, " , message code: ", code, " , conversation step: ", info.conversationStepIndex);
+                    } else if(stepEqual && extend.ConversationStepIndex != 0) {
+                        app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Wrong waiting step index for end, user: ", ID, " , message code: ", code, " , conversation step: ", extend.ConversationStepIndex);
                         return;
                     } else {
                         // Remove the waiting data
                         lock(conversationWaitingList) {
-                            conversationWaitingList.Remove(info.conversationCode);
+                            conversationWaitingList.Remove(extend.ConversationCode);
                         }
                     }
                     break;
                 default:
-                    app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", ID, " , message code: ", code, " , conversation type: ", (long)info.conversationStepType);
+                    app.Log(Logger.LogLevel.Warning, LOGGER_TAG, "Network message unknown type number, user: ", ID, " , message code: ", code, " , conversation type: ", (long)extend.ConversationStepType);
                     return;
             }
 
-            var subApp = app.GetSubApplication(info.appid);
-            lastHead = head;
-            subApp?.OnNetworkMessage(code, info, data, this);
+            var subApp = app.GetSubApplication(extend.AppId);
+            subApp?.OnNetworkMessage(code, extend, data, this);
         }
 
         public void OnUnknownEvent<T>(int _event, params T[] data) {
@@ -164,10 +180,10 @@ namespace ArmyAnt.ServerCore.Event
             {
                 OnLocalEvent(_event, local);
             }
-            else if (data[0] is CustomData info && data.Length == 3 && data[1] is Google.Protobuf.IMessage net)
+            else if (data[0] is SocketHeadExtend extend && data.Length == 2 && data[1] is Google.Protobuf.IMessage net)
             {
 
-                OnNetworkMessage(_event, data[2] as MessageBaseHead, info, net);
+                OnNetworkMessage(_event, extend, net);
             }
             else if (data[0] is int user && data.Length == 2 && data[1] is int check && check == 0)
             {
@@ -203,7 +219,7 @@ namespace ArmyAnt.ServerCore.Event
             }
         }
 
-        public bool SendMessage<T>(CustomMessageSend<T> msg, int conversationCode = 0) where T : Google.Protobuf.IMessage<T>, new() {
+        public bool SendMessage<T>(long appId, ConversationStepType stepType, T msg, int conversationCode) where T : Google.Protobuf.IMessage<T>, new() {
             // 这是从 C++ 的 ArmyAntServer 复制过来的发送代码, 因为时间来不及, 先放在这里提交, 回去处理
             int conversationStepIndex = 0;
             bool contains = false;
@@ -211,11 +227,11 @@ namespace ArmyAnt.ServerCore.Event
                 {
                     contains = conversationWaitingList.ContainsKey(conversationCode);
                     if(contains) {
-                        conversationStepIndex = conversationWaitingList[conversationCode];
+                        conversationStepIndex = conversationWaitingList[conversationCode].stepIndex;
                     }
                 }
             }
-            switch(msg.conversationStepType) {
+            switch(stepType) {
                 case ConversationStepType.NoticeOnly:
                 case ConversationStepType.AskFor:
                 case ConversationStepType.StartConversation:
@@ -240,20 +256,28 @@ namespace ArmyAnt.ServerCore.Event
                     conversationStepIndex += 1;
                     break;
                 default:
-                    app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Unknown conversation step type when sending a network message: ", msg.conversationStepType);
+                    app.Log(Logger.LogLevel.Error, LOGGER_TAG, "Unknown conversation step type when sending a network message: ", stepType);
                     return false;
             }
 
             lock(conversationWaitingList) {
-                switch(msg.conversationStepType) {
+                switch(stepType) {
                     case ConversationStepType.AskFor:
-                        conversationWaitingList.Add(conversationCode, 0);
+                        conversationWaitingList.Add(conversationCode, new ConversationStatus
+                        {
+                            code = conversationCode,
+                            stepIndex = 0,
+                        });
                         break;
                     case ConversationStepType.StartConversation:
-                        conversationWaitingList.Add(conversationCode, 1);
+                        conversationWaitingList.Add(conversationCode, new ConversationStatus
+                        {
+                            code = conversationCode,
+                            stepIndex = 1,
+                        });
                         break;
                     case ConversationStepType.ConversationStepOn:
-                        conversationWaitingList[conversationCode] = conversationStepIndex;
+                        conversationWaitingList[conversationCode].stepIndex = conversationStepIndex;
                         break;
                     case ConversationStepType.ResponseEnd:
                         conversationWaitingList.Remove(conversationCode);
@@ -263,16 +287,19 @@ namespace ArmyAnt.ServerCore.Event
                         break;
                 }
             }
-
-            app.Send(NetworkType, ID, conversationCode, conversationStepIndex, lastHead, msg);
+            var extend = new SocketHeadExtend();
+            extend.ConversationCode = conversationCode;
+            extend.ConversationStepIndex = conversationStepIndex;
+            extend.ConversationStepType = stepType;
+            extend.AppId = appId;
+            extend.MessageCode = MessageBaseHead.GetNetworkMessageCode(msg);
+            app.Send(msgType, NetworkType, ID, extend, msg);
             return true;
         }
 
         private Main.Server app;
 
-        private IDictionary<int, int> conversationWaitingList = new Dictionary<int, int>();
-
-        private MessageBaseHead lastHead;
+        private IDictionary<int, ConversationStatus> conversationWaitingList = new Dictionary<int, ConversationStatus>();
 
         private const string LOGGER_TAG = "Main EndPointTask Session";
     }

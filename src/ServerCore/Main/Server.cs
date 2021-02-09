@@ -3,7 +3,10 @@ using System.Net;
 using System.Threading.Tasks;
 using ArmyAnt.Network;
 using ArmyAnt.IO;
-using ArmyAnt.ServerCore.MsgType;
+using ArmyAnt.MsgType;
+using ArmyAntMessage.System;
+using System.Text;
+using Google.Protobuf;
 
 namespace ArmyAnt.ServerCore.Main {
     public sealed class Server
@@ -48,6 +51,7 @@ namespace ArmyAnt.ServerCore.Main {
                     OnTcpServerReceived = OnWebsocketServerReceived
                 };
             }
+            msgHelper = new MessageHelper();
         }
 
         ~Server() {
@@ -116,6 +120,8 @@ namespace ArmyAnt.ServerCore.Main {
             }
         }
 
+        public void RegisterMessage(Google.Protobuf.Reflection.MessageDescriptor descriptor) => msgHelper.RegisterMessage(descriptor);
+
         public async Task<int> AwaitAll() {
             var allTask = new List<Task>();
             if (tcpServer != null)
@@ -150,32 +156,52 @@ namespace ArmyAnt.ServerCore.Main {
             logger.WriteLine(lv, " [ ", Tag, " ] ", content);
         }
 
-        public void Send<T>(NetworkType type, long userId, int conversationCode, int conversationStepIndex, MessageBaseHead head, CustomMessageSend<T> msg) where T : Google.Protobuf.IMessage<T>, new() {
+        public void Send<T>(MessageType msgType, NetworkType type, long userId, SocketHeadExtend extend, T msg) where T : Google.Protobuf.IMessage<T>, new() {
             int index = 0;
             byte[] sending;
-            switch(type) {
+            var user = EventManager.GetUserSession(userId);
+            switch (type)
+            {
                 case NetworkType.Tcp:
-                lock(tcpSocketIndexList) {
-                    if(!tcpSocketIndexList.ContainsKey(userId)) {
-                        Log(Logger.LogLevel.Error, LoggerTag, "Sending TCP message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
-                        return;
+                    lock (tcpSocketIndexList)
+                    {
+                        if (!tcpSocketIndexList.ContainsKey(userId))
+                        {
+                            Log(Logger.LogLevel.Error, LoggerTag, "Sending TCP message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg));
+                            return;
+                        }
+                        index = tcpSocketIndexList[userId];
                     }
-                    index = tcpSocketIndexList[userId];
-                }
-                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, head, msg);
-                sendingTasks.Add(tcpServer.Send(index, sending));
-                break;
+                    if (msgType == MessageType.Json)
+                    {
+                        sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
+                    }
+                    else
+                    {
+                        sending = msgHelper.SerializeBinary(extend, msg);
+                    }
+                    sendingTasks.Add(tcpServer.Send(index, sending));
+                    break;
                 case NetworkType.Websocket:
-                lock(webSocketIndexList) {
-                    if(!webSocketIndexList.ContainsKey(userId)) {
-                        Log(Logger.LogLevel.Error, LoggerTag, "Sending Websocket message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg.body));
-                        return;
+                    lock (webSocketIndexList)
+                    {
+                        if (!webSocketIndexList.ContainsKey(userId))
+                        {
+                            Log(Logger.LogLevel.Error, LoggerTag, "Sending Websocket message to an inexist client id: ", userId, ", message code: ", MessageBaseHead.GetNetworkMessageCode(msg));
+                            return;
+                        }
+                        index = webSocketIndexList[userId];
                     }
-                    index = webSocketIndexList[userId];
-                }
-                sending = CustomMessageSend<T>.PackMessage(conversationCode, conversationStepIndex, head, msg);
-                sendingTasks.Add(httpServer.Send(index, sending));
-                break;
+                    if (msgType == MessageType.Json)
+                    {
+                        sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
+                    }
+                    else
+                    {
+                        sending = msgHelper.SerializeBinary(extend, msg);
+                    }
+                    sendingTasks.Add(httpServer.Send(index, sending));
+                    break;
             }
         }
 
@@ -224,17 +250,8 @@ namespace ArmyAnt.ServerCore.Main {
                 }
                 userId = tcpSocketUserList[index].ID;
             }
-            if (options.tcpAllowJson)
-            {
-                var (jsonBase, jsonStr) = CustomJson.DeserializeBase(data);
-                if(jsonBase != null)
-                {
-                    OnJson(userId, jsonBase, jsonStr);
-                    return;
-                }
-            }
-            var msg = CustomMessageReceived.ParseMessage(data);
-            OnMessage(userId, msg);
+            var (extend, msg, msgType) = msgHelper.Deserialize(options.tcpAllowJson, data);
+            OnMessage(userId, extend, msg, msgType);
         }
 
         private void OnUdpReceived(IPEndPoint ep, byte[] data) { /* TODO */ }
@@ -286,41 +303,20 @@ namespace ArmyAnt.ServerCore.Main {
                 }
                 userId = webSocketUserList[index].ID;
             }
-            if (options.websocketAllowJson)
-            {
-                var (jsonBase, jsonStr) = CustomJson.DeserializeBase(data);
-                if (jsonBase != null)
-                {
-                    OnJson(userId, jsonBase, jsonStr);
-                    return;
-                }
-            }
-            var msg = CustomMessageReceived.ParseMessage(data);
-            OnMessage(userId, msg);
+            var (extend, msg, msgType) = msgHelper.Deserialize(options.tcpAllowJson, data);
+            OnMessage(userId, extend, msg, msgType);
         }
 
-
-        private void OnJson(long userId, CustomData jsonBase, string jsonStr)
+        private void OnMessage(long userId, SocketHeadExtend extend, IMessage msg, MessageType msgType)
         {
-            Log(Logger.LogLevel.Verbose, LoggerTag, "Received from user id: ", userId, ", appid: " + jsonBase.appid);
+            Log(Logger.LogLevel.Verbose, LoggerTag, "Received from user id: ", userId, ", appid: " + extend.AppId);
             if (!EventManager.IsUserIn(userId))
             {
                 Log(Logger.LogLevel.Warning, LoggerTag, "Cannot find the user session: ", userId, " when resolving the message");
                 return;
             }
-            EventManager.DispatchNetworkMessage(jsonBase.messageCode, userId, jsonBase, jsonStr);
-        }
-
-
-        private void OnMessage(long userId, CustomMessageReceived msg)
-        {
-            Log(Logger.LogLevel.Verbose, LoggerTag, "Received from user id: ", userId, ", appid: " + msg.appid);
-            if (!EventManager.IsUserIn(userId))
-            {
-                Log(Logger.LogLevel.Warning, LoggerTag, "Cannot find the user session: ", userId, " when resolving the message");
-                return;
-            }
-            EventManager.DispatchNetworkMessage(msg.messageCode, userId, msg);
+            EventManager.GetUserSession(userId).msgType = msgType;
+            EventManager.DispatchNetworkMessage(MessageBaseHead.GetNetworkMessageCode(msg), userId, extend, msg);
         }
 
         private ServerOptions options;
@@ -328,6 +324,7 @@ namespace ArmyAnt.ServerCore.Main {
         private SocketTcpServer tcpServer;
         private SocketUdp udpListener;
         private HttpServer httpServer;
+        private MessageHelper msgHelper;
         private readonly IList<System.IO.FileStream> loggerFile = new List<System.IO.FileStream>();
         private Logger logger;
 

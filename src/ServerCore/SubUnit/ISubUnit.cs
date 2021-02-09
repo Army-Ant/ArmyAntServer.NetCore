@@ -1,4 +1,4 @@
-﻿using ArmyAnt.ServerCore.MsgType;
+﻿using ArmyAntMessage.System;
 
 namespace ArmyAnt.ServerCore.SubUnit {
     public interface ISubUnit : Thread.TaskPool<int>.ITaskQueue {
@@ -13,6 +13,6 @@ namespace ArmyAnt.ServerCore.SubUnit {
         void OnUserSessionShutdown(long userId);
         void OnUserSessionDisconnected(long userId);
         void OnUserSessionReconnected(long userId);
-        void OnNetworkMessage(int code, CustomData info, Google.Protobuf.IMessage data, Event.EndPointTask user);
+        void OnNetworkMessage(int code, SocketHeadExtend extend, Google.Protobuf.IMessage data, Event.EndPointTask user);
     }
 }

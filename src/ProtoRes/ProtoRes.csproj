@@ -19,6 +19,7 @@
   </Target>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\external\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\..\external\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj" />
   </ItemGroup>
 

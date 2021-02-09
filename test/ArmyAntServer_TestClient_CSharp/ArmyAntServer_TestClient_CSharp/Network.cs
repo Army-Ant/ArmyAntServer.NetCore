@@ -11,7 +11,7 @@ namespace ArmyAntServer_TestClient_CSharp
 {
     class Network
     {
-        public delegate bool OnReadCallback(int serials, int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data);
+        public delegate bool OnReadCallback(int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data);
         public delegate void OnDisconnectedCallback(bool isKickedOut, string reason);
         public Network(OnReadCallback rCB, OnDisconnectedCallback disCB)
         {
@@ -86,10 +86,9 @@ namespace ArmyAntServer_TestClient_CSharp
             }
         } 
 
-        public async Task SendToServerAsync(int serials, int type /* = 1 */, long appid, int messageCode, int conversationCode, int conversationStepIndex, ArmyAntMessage.System.ConversationStepType convType, byte[] content)
+        public async Task SendToServerAsync(int type /* = 1 */, long appid, int messageCode, int conversationCode, int conversationStepIndex, ArmyAntMessage.System.ConversationStepType convType, byte[] content)
         {
-            var extendHead = new ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1();
-            extendHead.ContentLength = content.Length;
+            var extendHead = new ArmyAntMessage.System.SocketHeadExtend();
             extendHead.AppId = appid;
             extendHead.MessageCode = messageCode;
             extendHead.ConversationCode = conversationCode;
@@ -97,7 +96,7 @@ namespace ArmyAntServer_TestClient_CSharp
             extendHead.ConversationStepType = convType;
             var extendBytes = new byte[extendHead.CalculateSize()];
             extendHead.WriteTo(new Google.Protobuf.CodedOutputStream(extendBytes));
-            var baseHead = new BaseHead(serials, type, 1, extendBytes.Length);
+            var baseHead = new BaseHead(type, 1, extendBytes.Length, content.Length);
 
             var retList = new List<byte>();
             retList.AddRange(baseHead.Bytes);
@@ -161,11 +160,11 @@ namespace ArmyAntServer_TestClient_CSharp
                 var extendBuffer = new byte[baseHead.extendLength];
                 for (var i = 0; i < baseHead.extendLength; ++i)
                     extendBuffer[i] = buffer.Dequeue();
-                var extend = ArmyAntMessage.System.SocketExtendNormal_V0_0_0_1.Parser.ParseFrom(extendBuffer);
-                var contentBuffer = new Byte[extend.ContentLength];
-                for (var i = 0; i < extend.ContentLength; ++i)
+                var extend = ArmyAntMessage.System.SocketHeadExtend.Parser.ParseFrom(extendBuffer);
+                var contentBuffer = new byte[baseHead.contentLength];
+                for (var i = 0; i < baseHead.contentLength; ++i)
                     contentBuffer[i] = buffer.Dequeue();
-                bool ret = onReadCallback(baseHead.serials, baseHead.type, extend.AppId, extend.MessageCode, extend.ConversationCode, extend.ConversationStepIndex, contentBuffer);
+                bool ret = onReadCallback(baseHead.type, extend.AppId, extend.MessageCode, extend.ConversationCode, extend.ConversationStepIndex, contentBuffer);
                 buffer.Clear();
                 if (!ret)
                 {
@@ -186,33 +185,33 @@ namespace ArmyAntServer_TestClient_CSharp
 
         private struct BaseHead
         {
-            internal int serials;
             internal int type;
             internal int extendVersion;
             internal int extendLength;
+            internal int contentLength;
 
-            internal BaseHead(int s, int t, int v, int l)
+            internal BaseHead(int t, int v, int el, int cl)
             {
-                serials = s;
                 type = t;
                 extendVersion = v;
-                extendLength = l;
+                extendLength = el;
+                contentLength = cl;
             }
 
             internal byte[] Bytes {
                 get {
                     var retList = new List<byte>();
-                    retList.AddRange(BitConverter.GetBytes(serials));
                     retList.AddRange(BitConverter.GetBytes(type));
                     retList.AddRange(BitConverter.GetBytes(extendVersion));
                     retList.AddRange(BitConverter.GetBytes(extendLength));
+                    retList.AddRange(BitConverter.GetBytes(contentLength));
                     return retList.ToArray();
                 }
                 set {
-                    serials = BitConverter.ToInt32(value, 0);
-                    type = BitConverter.ToInt32(value, 4);
-                    extendVersion = BitConverter.ToInt32(value, 8);
-                    extendLength = BitConverter.ToInt32(value, 12);
+                    type = BitConverter.ToInt32(value, 0);
+                    extendVersion = BitConverter.ToInt32(value, 4);
+                    extendLength = BitConverter.ToInt32(value, 8);
+                    contentLength = BitConverter.ToInt32(value, 12);
                 }
             }
         }

@@ -39,7 +39,7 @@ namespace ArmyAntServer_TestClient_CSharp
             receiveMessageCode = ArmyAntMessage.SubApps.SM2C_EchoReceiveNotice.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
         }
 
-        private bool onReceiveCallback(int serials, int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data)
+        private bool onReceiveCallback(int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data)
         {
             if (messageCode == loginResponseMessageCode)
             {
@@ -221,7 +221,7 @@ namespace ArmyAntServer_TestClient_CSharp
             var cos = new Google.Protobuf.CodedOutputStream(ms);
             request.WriteTo(cos);
             cos.Flush();
-            await net.SendToServerAsync(0, 1, appid, sendRequestMessageCode, 3, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
+            await net.SendToServerAsync(1, appid, sendRequestMessageCode, 3, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
         }
 
         private async void btnBroadcast_Click(object sender, EventArgs e)
@@ -233,7 +233,7 @@ namespace ArmyAntServer_TestClient_CSharp
             var cos = new Google.Protobuf.CodedOutputStream(ms);
             request.WriteTo(cos);
             cos.Flush();
-            await net.SendToServerAsync(0, 1, appid, broadcastRequestMessageCode, 4, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
+            await net.SendToServerAsync(1, appid, broadcastRequestMessageCode, 4, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
         }
 
         private async void btnLoginout_Click(object sender, EventArgs e)
@@ -247,7 +247,7 @@ namespace ArmyAntServer_TestClient_CSharp
                 var cos = new Google.Protobuf.CodedOutputStream(ms);
                 request.WriteTo(cos);
                 cos.Flush();
-                await net.SendToServerAsync(0, 1, appid, logoutRequestMessageCode, 2, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
+                await net.SendToServerAsync(1, appid, logoutRequestMessageCode, 2, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
             }
             else
             {
@@ -258,7 +258,7 @@ namespace ArmyAntServer_TestClient_CSharp
                 var cos = new Google.Protobuf.CodedOutputStream(ms);
                 request.WriteTo(cos);
                 cos.Flush();
-                await net.SendToServerAsync(0, 1, appid, loginRequestMessageCode, 1, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
+                await net.SendToServerAsync(1, appid, loginRequestMessageCode, 1, 0, ArmyAntMessage.System.ConversationStepType.AskFor, ms.ToArray());
                 loginNameTextBox.Enabled = false;
                 btnLoginout.Enabled = false;
             }
