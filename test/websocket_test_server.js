@@ -7,7 +7,7 @@ import HTTPServer from "./ArmyAnt.js/scripts/node.js_extend/httpServer"
 let serverHost = {
     onStart: function () {
         let svr = new HTTPServer();
-        svr.start(8088);
+        svr.start("./", 8088);
     },
 
     onTest: function () {

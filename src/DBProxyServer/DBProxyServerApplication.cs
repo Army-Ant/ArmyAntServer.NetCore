@@ -68,6 +68,7 @@ namespace ArmyAnt.DBProxyServer
                     loggerFile = new string[] { config.logPath },
                     loggerTag = LOGGER_TAG,
                     tcp = new IPEndPoint(IPAddress.Any, config.port),
+                    tcpAllowJson = false,
                 });
 
                 // Connect Data Base

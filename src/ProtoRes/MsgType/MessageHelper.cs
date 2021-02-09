@@ -12,6 +12,12 @@ namespace ArmyAnt.MsgType
 {
     public class MessageHelper
     {
+        public MessageHelper()
+        {
+            JsonParser.Settings.Default.IgnoreUnknownFields = true;
+            JsonFormatter.Settings.Default.FormatDefaultValues = true;
+        }
+
         public byte[] SerializeBinary(SocketHeadExtend extend, Google.Protobuf.IMessage msg)
         {
             byte[] msg_byte = new byte[msg.CalculateSize()];
@@ -41,9 +47,10 @@ namespace ArmyAnt.MsgType
         {
             var jsonExtend = extend.ToString();
             var jsonMsg = msg.ToString();
-            var jObj = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonExtend) as JObject;
-            jObj.Merge(Newtonsoft.Json.JsonConvert.DeserializeObject(jsonMsg));
-            return jObj.ToString();
+            var jObjExtend = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonExtend) as JObject;
+            var jObjMsg = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonMsg) as JObject;
+            jObjExtend.Merge(jObjMsg);
+            return jObjExtend.ToString();
         }
 
         public (MessageBaseHead head, SocketHeadExtend extend, IMessage msg) DeserializeBinary(byte[] data)
@@ -70,7 +77,8 @@ namespace ArmyAnt.MsgType
             {
                 try
                 {
-                    (extend, msg) = DeserializeJson(Encoding.Default.GetString(data));
+                    var str = Encoding.Default.GetString(data);
+                    (extend, msg) = DeserializeJson(str);
                     if (extend != null && extend.ConversationStepType != ConversationStepType.Default)
                     {
                         msgType = MessageType.Json;

@@ -61,11 +61,14 @@ namespace ArmyAnt.GateServer
                     loggerFile = new string[] { config.logPath },
                     loggerTag = LOGGER_TAG,
                     tcp = new IPEndPoint(IPAddress.Any, config.normalSocketPort),
+                    tcpAllowJson = true,
                     udp = new IPEndPoint(IPAddress.Any, config.udpSocketPort),
+                    udpAllowJson = true,
                     http = new string[] { 
                         "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/", 
                         "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/" 
                     },
+                    websocketAllowJson = true,
                 });
 
                 // Connect DB proxy server
