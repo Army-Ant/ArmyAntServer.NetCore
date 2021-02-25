@@ -8,14 +8,14 @@ namespace ArmyAnt.DBProxyServer {
     public class MySqlBridge : SqlClient {
         public struct ConnectOptions {
             public string serverAddress;
-            public string serverPort;
+            public ushort serverPort;
             public string userName;
             public string password;
 
             public override string ToString() {
                 var str = "server=" + serverAddress;
-                if(!string.IsNullOrEmpty(serverPort)) {
-                    str += ";port=" + serverPort;
+                if(serverPort != 0) {
+                    str += ";port=" + serverPort.ToString();
                 }
                 if(!string.IsNullOrEmpty(userName)) {
                     str += ";username=" + userName;

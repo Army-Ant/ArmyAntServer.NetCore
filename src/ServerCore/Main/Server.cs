@@ -172,7 +172,7 @@ namespace ArmyAnt.ServerCore.Main {
                         }
                         index = tcpSocketIndexList[userId];
                     }
-                    if (msgType == MessageType.Json)
+                    if (msgType == MessageType.JsonString)
                     {
                         sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
                     }
@@ -182,7 +182,7 @@ namespace ArmyAnt.ServerCore.Main {
                     }
                     sendingTasks.Add(tcpServer.Send(index, sending));
                     break;
-                case NetworkType.Websocket:
+                case NetworkType.WebSocket:
                     lock (webSocketIndexList)
                     {
                         if (!webSocketIndexList.ContainsKey(userId))
@@ -192,7 +192,7 @@ namespace ArmyAnt.ServerCore.Main {
                         }
                         index = webSocketIndexList[userId];
                     }
-                    if (msgType == MessageType.Json)
+                    if (msgType == MessageType.JsonString)
                     {
                         sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
                     }
@@ -264,7 +264,7 @@ namespace ArmyAnt.ServerCore.Main {
                     Log(Logger.LogLevel.Error, LoggerTag, "New Websocket client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
                 } else {
-                    var user = new Event.EndPointTask(this, NetworkType.Websocket);
+                    var user = new Event.EndPointTask(this, NetworkType.WebSocket);
                     user.ID = EventManager.AddUserSession(user);
                     Log(Logger.LogLevel.Verbose, LoggerTag, "New Websocket client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.ID);
                     lock(webSocketUserList) {

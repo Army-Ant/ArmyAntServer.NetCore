@@ -39,14 +39,14 @@ namespace ArmyAnt.ServerCore.Event
 
     public class EndPointTask : Thread.TaskPool<int>.ITaskQueue
     {
-        public EndPointTask(Main.Server application, Network.NetworkType clientType){
+        public EndPointTask(Main.Server application, NetworkType clientType){
             app = application;
             NetworkType = clientType;
         }
 
         public MessageType msgType { get; set; }
 
-        public Network.NetworkType NetworkType { get; }
+        public NetworkType NetworkType { get; }
 
         public void OnLocalEvent<T>(int code, T data) {
         }

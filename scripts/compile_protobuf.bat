@@ -25,6 +25,7 @@ set PROTOFILES=%PROTOFILE_PATH%\ArmyAntMessage\Common\base.proto
 set PROTOFILES=%PROTOFILES% %PROTOFILE_PATH%\ArmyAntMessage\System\SocketHead.proto
 set PROTOFILES=%PROTOFILES% %PROTOFILE_PATH%\ArmyAntMessage\System\SessionStart.proto
 ::sub application
+set PROTOFILES=%PROTOFILES% %PROTOFILE_PATH%\ArmyAntMessage\SubApps\Gate.proto
 set PROTOFILES=%PROTOFILES% %PROTOFILE_PATH%\ArmyAntMessage\SubApps\Chat.proto
 set PROTOFILES=%PROTOFILES% %PROTOFILE_PATH%\ArmyAntMessage\SubApps\Huolong.proto
 ::database proxy

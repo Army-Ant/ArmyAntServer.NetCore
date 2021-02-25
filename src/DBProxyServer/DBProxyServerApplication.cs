@@ -25,9 +25,10 @@ namespace ArmyAnt.DBProxyServer
             public ushort port;
             public string logPath;
             public string logFileLevel;
+            public string logTag;
             public string logConsoleLevel; // TODO: 未实现
             public string mysqlServerHost;
-            public string mysqlServerPort;
+            public ushort mysqlServerPort;
             public string mysqlDataBase;
             public string mysqlUsername;
             public string mysqlPassword;
@@ -53,6 +54,7 @@ namespace ArmyAnt.DBProxyServer
             if (ser.ReadObject(jsonFile) is Config config)
             {
                 jsonFile.Close();
+                logTag = config.logTag;
 
                 // define server
                 server = new ServerCore.Main.Server(new ServerCore.Main.ServerOptions
@@ -60,7 +62,7 @@ namespace ArmyAnt.DBProxyServer
                     consoleLevel = Logger.LevelFromString(config.logConsoleLevel),
                     fileLevel = Logger.LevelFromString(config.logFileLevel),
                     loggerFile = new string[] { config.logPath },
-                    loggerTag = LOGGER_TAG,
+                    loggerTag = logTag,
                     tcp = new IPEndPoint(IPAddress.Any, config.port),
                     tcpAllowJson = false,
                 });
@@ -93,23 +95,23 @@ namespace ArmyAnt.DBProxyServer
             mySql = new MySqlBridge();
             while (!mySql.Connect(connStr, defaultDataBase))
             {
-                server.Log(Logger.LogLevel.Error, LOGGER_TAG, "Database connected failed, retrying...");
+                server.Log(Logger.LogLevel.Error, logTag, "Database connected failed, retrying...");
             }
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "Database connected");
+            server.Log(Logger.LogLevel.Info, logTag, "Database connected");
         }
 
         private void DisconnectDataBase()
         {
             mySql.Disconnect();
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "Database disconnected");
+            server.Log(Logger.LogLevel.Info, logTag, "Database disconnected");
         }
 
-        private const string LOGGER_TAG = "DBProxy Main";
-        private const string CONFIG_FILE = "../../res/ConfigJson/DBProxyConfig.json";
+        private const string CONFIG_FILE = "../../res/ConfigJson/DBProxyServerConfig.json";
 
         private int ReturnCodeToInt(ReturnCode code) => Convert.ToInt32(code);
 
         private ServerCore.Main.Server server;
+        private string logTag;
         private MySqlBridge mySql;
     }
 }

@@ -37,6 +37,7 @@ namespace ArmyAnt.ChatServer
             public ushort websocketSSLPort;
             public string logPath;
             public string logFileLevel;
+            public string logTag;
             public string logConsoleLevel;
             public string dbProxyAddr;
             public ushort dbProxyPort;
@@ -51,6 +52,7 @@ namespace ArmyAnt.ChatServer
             if (ser.ReadObject(jsonFile) is Config config)
             {
                 jsonFile.Close();
+                logTag = config.logTag;
 
                 // define server
                 server = new ServerCore.Main.Server(new ServerCore.Main.ServerOptions
@@ -58,7 +60,7 @@ namespace ArmyAnt.ChatServer
                     consoleLevel = Logger.LevelFromString(config.logConsoleLevel),
                     fileLevel = Logger.LevelFromString(config.logFileLevel),
                     loggerFile = new string[] { config.logPath },
-                    loggerTag = LOGGER_TAG,
+                    loggerTag = logTag,
                     tcp = new IPEndPoint(IPAddress.Any, config.normalSocketPort),
                     tcpAllowJson = true,
                     udp = new IPEndPoint(IPAddress.Any, config.udpSocketPort),
@@ -99,7 +101,7 @@ namespace ArmyAnt.ChatServer
 
         private void OnDBProxyDisconnected()
         {
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy server lost!");
+            server.Log(Logger.LogLevel.Info, logTag, "DBProxy server lost!");
             dbProxy = new SocketTcpClient()
             {
                 OnClientReceived = OnDBProxyReceived,
@@ -117,10 +119,10 @@ namespace ArmyAnt.ChatServer
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                server.Log(System.Text.Encoding.Default, Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
+                server.Log(System.Text.Encoding.Default, Logger.LogLevel.Warning, logTag, "DBProxy connected failed, message: ", e.Message);
                 return false;
             }
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+            server.Log(Logger.LogLevel.Info, logTag, "DBProxy connected");
             return true;
         }
 
@@ -133,17 +135,17 @@ namespace ArmyAnt.ChatServer
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                server.Log(Logger.LogLevel.Warning, LOGGER_TAG, "DBProxy connected failed, message: ", e.Message);
+                server.Log(Logger.LogLevel.Warning, logTag, "DBProxy connected failed, message: ", e.Message);
                 return false;
             }
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy connected");
+            server.Log(Logger.LogLevel.Info, logTag, "DBProxy connected");
             return true;
         }
 
         private void DisconnectDBProxy()
         {
             dbProxy.Stop();
-            server.Log(Logger.LogLevel.Info, LOGGER_TAG, "DBProxy over");
+            server.Log(Logger.LogLevel.Info, logTag, "DBProxy over");
         }
 
         private int ReturnCodeToInt(ReturnCode code) => Convert.ToInt32(code);
@@ -153,7 +155,7 @@ namespace ArmyAnt.ChatServer
         private ServerCore.Main.Server server;
         private SocketTcpClient dbProxy;
 
-        private const string LOGGER_TAG = "Gate Server";
-        private const string CONFIG_FILE = "../../res/ConfigJson/ServerMainConfig.json";
+        private string logTag;
+        private const string CONFIG_FILE = "../../res/ConfigJson/ChatServerConfig.json";
     }
 }

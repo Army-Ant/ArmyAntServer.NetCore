@@ -10,16 +10,16 @@ namespace ArmyAnt.ServerUnits {
         public ChatApp(long appid, ServerCore.Main.Server server) {
             AppId = appid;
             Server = server;
-            server.RegisterMessage(C2SM_EchoLoginRequest.Descriptor);
-            server.RegisterMessage(C2SM_EchoLogoutRequest.Descriptor);
-            server.RegisterMessage(C2SM_EchoSendRequest.Descriptor);
-            server.RegisterMessage(C2SM_EchoBroadcastRequest.Descriptor);
-            server.RegisterMessage(SM2C_EchoLoginResponse.Descriptor);
-            server.RegisterMessage(SM2C_EchoLogoutResponse.Descriptor);
-            server.RegisterMessage(SM2C_EchoReceiveNotice.Descriptor);
-            server.RegisterMessage(SM2C_EchoSendResponse.Descriptor);
-            server.RegisterMessage(SM2C_EchoBroadcastResponse.Descriptor);
-            server.RegisterMessage(SM2C_EchoError.Descriptor);
+            server.RegisterMessage(CS_EchoLoginRequest.Descriptor);
+            server.RegisterMessage(CS_EchoLogoutRequest.Descriptor);
+            server.RegisterMessage(CS_EchoSendRequest.Descriptor);
+            server.RegisterMessage(CS_EchoBroadcastRequest.Descriptor);
+            server.RegisterMessage(SC_EchoLoginResponse.Descriptor);
+            server.RegisterMessage(SC_EchoLogoutResponse.Descriptor);
+            server.RegisterMessage(SC_EchoReceiveNotice.Descriptor);
+            server.RegisterMessage(SC_EchoSendResponse.Descriptor);
+            server.RegisterMessage(SC_EchoBroadcastResponse.Descriptor);
+            server.RegisterMessage(SC_EchoError.Descriptor);
         }
 
         public long AppId { get; }
@@ -32,14 +32,14 @@ namespace ArmyAnt.ServerUnits {
         }
 
         public void OnNetworkMessage(int code, SocketHeadExtend extend, Google.Protobuf.IMessage data, EndPointTask user) {
-            if(data is C2SM_EchoLoginRequest) {
-                OnUserLogin(extend.ConversationCode, user, data as C2SM_EchoLoginRequest);
-            } else if(data is C2SM_EchoLogoutRequest) {
-                OnUserLogout(extend.ConversationCode, user, data as C2SM_EchoLogoutRequest);
-            } else if(data is C2SM_EchoSendRequest) {
-                OnUserSend(extend.ConversationCode, user, data as C2SM_EchoSendRequest);
-            } else if(data is C2SM_EchoBroadcastRequest) {
-                OnUserBroadcast(extend.ConversationCode, user, data as C2SM_EchoBroadcastRequest);
+            if(data is CS_EchoLoginRequest) {
+                OnUserLogin(extend.ConversationCode, user, data as CS_EchoLoginRequest);
+            } else if(data is CS_EchoLogoutRequest) {
+                OnUserLogout(extend.ConversationCode, user, data as CS_EchoLogoutRequest);
+            } else if(data is CS_EchoSendRequest) {
+                OnUserSend(extend.ConversationCode, user, data as CS_EchoSendRequest);
+            } else if(data is CS_EchoBroadcastRequest) {
+                OnUserBroadcast(extend.ConversationCode, user, data as CS_EchoBroadcastRequest);
             } else {
                 Server.Log(IO.Logger.LogLevel.Warning, LOGGER_TAG, "Received an unknown message, code:", code, ", user:", user.ID);
             }
@@ -87,8 +87,8 @@ namespace ArmyAnt.ServerUnits {
             return Server.EventManager.GetTask(TaskId);
         }
 
-        private void OnUserLogin(int conversationCode, EndPointTask user, C2SM_EchoLoginRequest message) {
-            var response = new SM2C_EchoLoginResponse();
+        private void OnUserLogin(int conversationCode, EndPointTask user, CS_EchoLoginRequest message) {
+            var response = new SC_EchoLoginResponse();
             lock(loggedUsers) {
                 if(loggedUsers.ContainsKey(message.UserName)) { // User name has logged in !
                     response.Result = 3;    // failed
@@ -104,8 +104,8 @@ namespace ArmyAnt.ServerUnits {
             user.SendMessage(AppId, ConversationStepType.ResponseEnd, response, conversationCode);
         }
 
-        private void OnUserLogout(int conversationCode, EndPointTask user, C2SM_EchoLogoutRequest message) {
-            var response = new SM2C_EchoLogoutResponse();
+        private void OnUserLogout(int conversationCode, EndPointTask user, CS_EchoLogoutRequest message) {
+            var response = new SC_EchoLogoutResponse();
             lock(loggedUsers) {
                 if(!loggedUsers.ContainsKey(message.UserName)) { // User name has not logged in !
                     response.Result = 3;    // failed
@@ -121,9 +121,9 @@ namespace ArmyAnt.ServerUnits {
             user.SendMessage(AppId, ConversationStepType.ResponseEnd, response, conversationCode);
         }
 
-        private void OnUserSend(int conversationCode, EndPointTask user, C2SM_EchoSendRequest message) {
-            var response = new SM2C_EchoSendResponse();
-            SM2C_EchoReceiveNotice notice = null;
+        private void OnUserSend(int conversationCode, EndPointTask user, CS_EchoSendRequest message) {
+            var response = new SC_EchoSendResponse();
+            SC_EchoReceiveNotice notice = null;
             string fromUser = null;
             EndPointTask tarUser = null;
             lock(loggedUsers) {
@@ -146,7 +146,7 @@ namespace ArmyAnt.ServerUnits {
                     response.Result = 0;    // successful
                     response.Message = "Send successful !";
                     Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a message to user: ", message.Target);
-                    notice = new SM2C_EchoReceiveNotice() {
+                    notice = new SC_EchoReceiveNotice() {
                         IsBroadcast = false,
                         From = fromUser,
                         Message = message.Message,
@@ -160,9 +160,9 @@ namespace ArmyAnt.ServerUnits {
             }
         }
 
-        private void OnUserBroadcast(int conversationCode, EndPointTask user, C2SM_EchoBroadcastRequest message) {
-            var response = new SM2C_EchoBroadcastResponse();
-            SM2C_EchoReceiveNotice notice = null;
+        private void OnUserBroadcast(int conversationCode, EndPointTask user, CS_EchoBroadcastRequest message) {
+            var response = new SC_EchoBroadcastResponse();
+            SC_EchoReceiveNotice notice = null;
             string fromUser = null;
             lock(loggedUsers) {
                 foreach(var i in loggedUsers) {
@@ -179,7 +179,7 @@ namespace ArmyAnt.ServerUnits {
                 response.Result = 0;    // successful
                 response.Message = "Send successful !";
                 Server.Log(IO.Logger.LogLevel.Verbose, LOGGER_TAG, "User ", fromUser, " sended a broadcast message");
-                notice = new SM2C_EchoReceiveNotice() {
+                notice = new SC_EchoReceiveNotice() {
                     IsBroadcast = true,
                     From = fromUser,
                     Message = message.Message,

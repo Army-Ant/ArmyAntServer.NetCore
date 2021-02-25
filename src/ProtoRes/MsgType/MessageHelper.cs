@@ -36,7 +36,7 @@ namespace ArmyAnt.MsgType
 
             var head = new MessageBaseHead
             {
-                type = MessageType.Protobuf,
+                type = MessageType.ProtocolBuffer,
                 extendVersion = 1,
                 extendLength = msg_extend.Length,
                 contentLength = msg_byte.Length,
@@ -63,7 +63,7 @@ namespace ArmyAnt.MsgType
         {
             SocketHeadExtend extend = null;
             IMessage msg = null;
-            MessageType msgType = MessageType.Protobuf;
+            MessageType msgType = MessageType.ProtocolBuffer;
             if (allowJson)
             {
                 try
@@ -72,7 +72,7 @@ namespace ArmyAnt.MsgType
                     (extend, msg) = DeserializeJson(str);
                     if (extend != null && extend.ConversationStepType != ConversationStepType.Default)
                     {
-                        msgType = MessageType.Json;
+                        msgType = MessageType.JsonString;
                     }
                 }
                 catch (System.Exception e)
@@ -80,7 +80,7 @@ namespace ArmyAnt.MsgType
 
                 }
             }
-            if (msgType != MessageType.Json)
+            if (msgType != MessageType.JsonString)
             {
                 MessageBaseHead head;
                 (head, extend, msg) = DeserializeBinary(data);

@@ -5,21 +5,13 @@ using ArmyAntMessage.System;
 
 namespace ArmyAnt.MsgType
 {
-    public enum MessageType : int
-    {
-        Unknown,
-        Protobuf,
-        DataBlock,
-        String,
-        Json,
-    }
 
     [Serializable]
     public struct MessageBaseHead
     {
         public static readonly MessageBaseHead Default = new MessageBaseHead
         {
-            type = MessageType.Protobuf,
+            type = MessageType.ProtocolBuffer,
             extendVersion = 1,
             extendLength = 1,
             contentLength = 1,
@@ -32,7 +24,7 @@ namespace ArmyAnt.MsgType
 
         public MessageBaseHead(byte[] wholeMessage)
         {
-            type = MessageType.Protobuf;
+            type = MessageType.ProtocolBuffer;
             extendVersion = 1;
             extendLength = 1;
             contentLength = 1;
