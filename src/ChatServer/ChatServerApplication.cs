@@ -5,9 +5,9 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace ArmyAnt.GateServer
+namespace ArmyAnt.ChatServer
 {
-    internal class GateServerApplication
+    internal class ChatServerApplication
     {
         public enum ReturnCode
         {
@@ -63,9 +63,9 @@ namespace ArmyAnt.GateServer
                     tcpAllowJson = true,
                     udp = new IPEndPoint(IPAddress.Any, config.udpSocketPort),
                     udpAllowJson = true,
-                    http = new string[] { 
-                        "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/", 
-                        "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/" 
+                    http = new string[] {
+                        "http://localhost:" + config.websocketPort + "/", "https://localhost:" + config.websocketSSLPort + "/",
+                        "http://127.0.0.1:" + config.websocketPort + "/", "https://127.0.0.1:" + config.websocketSSLPort + "/"
                     },
                     websocketAllowJson = true,
                 });
@@ -80,6 +80,9 @@ namespace ArmyAnt.GateServer
 
                 // Start server
                 server.Start();
+
+                var chatApp = new ServerUnits.ChatApp(ServerMainAppid.chatApp, server);
+                chatApp.TaskId = server.StartSubApplication(chatApp)[0];
 
                 // Wait for server ending
                 var ret = await server.AwaitAll();

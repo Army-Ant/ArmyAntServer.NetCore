@@ -59,7 +59,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="protobufSource\Base.cs" />
     <Compile Include="protobufSource\SessionStart.cs" />
-    <Compile Include="protobufSource\SimpleEcho.cs" />
+    <Compile Include="protobufSource\Chat.cs" />
     <Compile Include="protobufSource\SocketHead.cs" />
     <Compile Include="protobufSource\SqlRequest.cs" />
     <EmbeddedResource Include="Form_Main.resx">

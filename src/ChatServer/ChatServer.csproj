@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <RootNamespace>ArmyAnt.ChatServer</RootNamespace>
+    <StartupObject></StartupObject>
+    <StartupObject>ArmyAnt.ChatServer.Program</StartupObject>
+    <PackageId>com.armyant.chatserver</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Jason Zhao Jie</Authors>
+    <Company>ArmyAnt Org</Company>
+    <Product>ArmyAntChatServer</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>D:\github.com\Army-Ant\ArmyAntServer.NetCore\bin</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChatApp\ChatApp.csproj" />
+    <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>SimpleEchoApp</AssemblyName>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <AssemblyName>ChatApp</AssemblyName>
     <RootNamespace>ArmyAnt.ServerUnits</RootNamespace>
     <Version>0.0.1</Version>
     <Company>ArmyAnt Org</Company>
     <Authors>Jason Zhao Jie</Authors>
     <Product>ArmyAntServer</Product>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageId>com.armyant.server.simpleechoapp</PackageId>
+    <PackageId>com.armyant.server.chatapp</PackageId>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 

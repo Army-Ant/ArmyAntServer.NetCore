@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
     <AssemblyName>GateServer</AssemblyName>
     <RootNamespace>ArmyAnt.GateServer</RootNamespace>
     <Version>0.0.1</Version>
@@ -28,7 +28,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
-    <ProjectReference Include="..\SimpleEchoApp\SimpleEchoApp.csproj" />
   </ItemGroup>
 
 </Project>

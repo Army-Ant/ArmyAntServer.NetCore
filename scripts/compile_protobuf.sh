@@ -45,7 +45,7 @@ ${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCS
 ${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCSHARP_PATH --js_out=$PROTOJAVASCRIPT_PATH --python_out=$PROTOPYTHON_PATH $PROTOFILE_PATH/ArmyAntMessage/System/SessionStart.proto
 ${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCSHARP_PATH --js_out=$PROTOJAVASCRIPT_PATH --python_out=$PROTOPYTHON_PATH $PROTOFILE_PATH/ArmyAntMessage/DBProxy/SqlRequest.proto
 
-${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCSHARP_PATH --js_out=$PROTOJAVASCRIPT_PATH --python_out=$PROTOPYTHON_PATH $PROTOFILE_PATH/ArmyAntMessage/SubApps/SimpleEcho.proto
+${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCSHARP_PATH --js_out=$PROTOJAVASCRIPT_PATH --python_out=$PROTOPYTHON_PATH $PROTOFILE_PATH/ArmyAntMessage/SubApps/Chat.proto
 ${PROTOC_PATH} -I=$PROTOFILE_PATH --cpp_out=$PROTOCPP_PATH --csharp_out=$PROTOCSHARP_PATH --js_out=$PROTOJAVASCRIPT_PATH --python_out=$PROTOPYTHON_PATH $PROTOFILE_PATH/ArmyAntMessage/SubApps/Huolong.proto
 
 # TODO: copy csharp source code files to PROTOSRC_SERVER

@@ -18,14 +18,20 @@ namespace ArmyAnt.MsgType
             JsonFormatter.Settings.Default.FormatDefaultValues = true;
         }
 
-        public byte[] SerializeBinary(SocketHeadExtend extend, Google.Protobuf.IMessage msg)
+        public void RegisterMessage(Google.Protobuf.Reflection.MessageDescriptor descriptor)
+        {
+            var code = descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            messageTypeDic[code] = descriptor;
+        }
+
+        public byte[] SerializeBinary(SocketHeadExtend extend, IMessage msg)
         {
             byte[] msg_byte = new byte[msg.CalculateSize()];
-            var stream = new Google.Protobuf.CodedOutputStream(msg_byte);
+            var stream = new CodedOutputStream(msg_byte);
             msg.WriteTo(stream);
 
             byte[] msg_extend = new byte[extend.CalculateSize()];
-            var extend_stream = new Google.Protobuf.CodedOutputStream(msg_extend);
+            var extend_stream = new CodedOutputStream(msg_extend);
             extend.WriteTo(extend_stream);
 
             var head = new MessageBaseHead
@@ -51,21 +57,6 @@ namespace ArmyAnt.MsgType
             var jObjMsg = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonMsg) as JObject;
             jObjExtend.Merge(jObjMsg);
             return jObjExtend.ToString();
-        }
-
-        public (MessageBaseHead head, SocketHeadExtend extend, IMessage msg) DeserializeBinary(byte[] data)
-        {
-            var head = new MessageBaseHead(data);
-            var extend = SocketHeadExtend.Parser.ParseFrom(data, 16, head.extendLength);
-            var msg = messageTypeDic[extend.MessageCode].Parser.ParseFrom(data.Skip(16 + head.extendLength).ToArray());
-            return (head, extend, msg);
-        }
-
-        public (SocketHeadExtend extend, IMessage msg) DeserializeJson(string json)
-        {
-            var extend = SocketHeadExtend.Parser.ParseJson(json);
-            var msg = messageTypeDic[extend.MessageCode].Parser.ParseJson(json);
-            return (extend, msg);
         }
 
         public (SocketHeadExtend extend, IMessage msg, MessageType msgType) Deserialize(bool allowJson, byte[] data)
@@ -97,10 +88,19 @@ namespace ArmyAnt.MsgType
             return (extend, msg, msgType);
         }
 
-        public void RegisterMessage(Google.Protobuf.Reflection.MessageDescriptor descriptor)
+        private (MessageBaseHead head, SocketHeadExtend extend, IMessage msg) DeserializeBinary(byte[] data)
         {
-            var code = descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            messageTypeDic[code] = descriptor;
+            var head = new MessageBaseHead(data);
+            var extend = SocketHeadExtend.Parser.ParseFrom(data, 16, head.extendLength);
+            var msg = messageTypeDic[extend.MessageCode].Parser.ParseFrom(data.Skip(16 + head.extendLength).ToArray());
+            return (head, extend, msg);
+        }
+
+        private (SocketHeadExtend extend, IMessage msg) DeserializeJson(string json)
+        {
+            var extend = SocketHeadExtend.Parser.ParseJson(json);
+            var msg = messageTypeDic[extend.MessageCode].Parser.ParseJson(json);
+            return (extend, msg);
         }
 
         private readonly IDictionary<int, Google.Protobuf.Reflection.MessageDescriptor> messageTypeDic = new Dictionary<int, Google.Protobuf.Reflection.MessageDescriptor>();

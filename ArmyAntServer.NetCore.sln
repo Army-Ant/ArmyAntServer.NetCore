@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBProxyServer", "src\DBProx
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MySqlConnector", "external\MySqlConnector\src\MySqlConnector\MySqlConnector.csproj", "{56597BAC-C4C8-4F7F-8EB8-1EF790471B9F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleEchoApp", "src\SimpleEchoApp\SimpleEchoApp.csproj", "{CCE00D9E-E177-4BBF-B752-5970274C10C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApp", "src\ChatApp\ChatApp.csproj", "{CCE00D9E-E177-4BBF-B752-5970274C10C4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Protobuf", "external\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj", "{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321}"
 EndProject
@@ -30,6 +30,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2.resources", "2.resources", "{8EFA5F5A-5E71-4A6F-B15A-C75B01F56996}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Newtonsoft.Json", "external\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj", "{D792A26D-3E44-4495-9F68-8498B450E51B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer", "src\ChatServer\ChatServer.csproj", "{F9017C1B-24C5-4B50-B930-94B82BD85FD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +75,10 @@ Global
 		{D792A26D-3E44-4495-9F68-8498B450E51B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D792A26D-3E44-4495-9F68-8498B450E51B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D792A26D-3E44-4495-9F68-8498B450E51B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -87,6 +93,7 @@ Global
 		{CCE00D9E-E177-4BBF-B752-5970274C10C4} = {9942BCDA-75EB-4977-936D-F9833BDE9046}
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321} = {C4192722-C17B-4F1A-8C93-C9716705258F}
 		{D792A26D-3E44-4495-9F68-8498B450E51B} = {C4192722-C17B-4F1A-8C93-C9716705258F}
+		{F9017C1B-24C5-4B50-B930-94B82BD85FD5} = {C2DC6611-03A1-4B7D-AE1B-C1F85ECE92BC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {038EC8AE-4EF0-4352-A4AD-ECC228907A0A}

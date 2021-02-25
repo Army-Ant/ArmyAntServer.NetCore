@@ -5,9 +5,9 @@ using ArmyAntMessage.System;
 using ArmyAntMessage.SubApps;
 
 namespace ArmyAnt.ServerUnits {
-    public class SimpleEchoApp : ISubUnit
+    public class ChatApp : ISubUnit
     {
-        public SimpleEchoApp(long appid, ServerCore.Main.Server server) {
+        public ChatApp(long appid, ServerCore.Main.Server server) {
             AppId = appid;
             Server = server;
             server.RegisterMessage(C2SM_EchoLoginRequest.Descriptor);
@@ -196,7 +196,7 @@ namespace ArmyAnt.ServerUnits {
             }
         }
 
-        private const string LOGGER_TAG = "SimpleEchoApp";
+        private const string LOGGER_TAG = "ChatApp";
 
         private IDictionary<string, long> loggedUsers = new Dictionary<string, long>();
     }

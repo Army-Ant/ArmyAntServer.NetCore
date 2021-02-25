@@ -17,12 +17,6 @@ namespace ArmyAnt.DBProxyServer
             NormalExit = 0,
         }
 
-        private static class ServerMainAppid
-        {
-            public const int simpleEchoApp = 1001;
-            public const int huolongServer = 1010;
-        };
-
 #pragma warning disable CS0649
         [System.Serializable]
         private struct Config
