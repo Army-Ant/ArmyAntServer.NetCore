@@ -26,7 +26,7 @@ namespace ArmyAnt.DBProxyServer
             public string logPath;
             public string logFileLevel;
             public string logTag;
-            public string logConsoleLevel; // TODO: 未实现
+            public string logConsoleLevel;
             public string mysqlServerHost;
             public ushort mysqlServerPort;
             public string mysqlDataBase;
