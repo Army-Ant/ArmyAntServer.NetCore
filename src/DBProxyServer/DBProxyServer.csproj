@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\external\MySqlConnector\src\MySqlConnector\MySqlConnector.csproj" />
+    <ProjectReference Include="..\DBStructs\DBStructs.csproj" />
     <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
   </ItemGroup>
 

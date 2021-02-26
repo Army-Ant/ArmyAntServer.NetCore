@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DBStructs\DBStructs.csproj" />
     <ProjectReference Include="..\ServerCore\ServerCore.csproj" />
   </ItemGroup>
 

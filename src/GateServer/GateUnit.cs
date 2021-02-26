@@ -7,14 +7,14 @@ using Google.Protobuf;
 
 namespace ArmyAnt.GateServer
 {
-    internal struct ConnectedUserData
-    {
-        public string uid;
-        public long userId; 
-    }
-
     public class GateUnit : ASubUnit
     {
+        private struct ConnectedUserData
+        {
+            public string uid;
+            public long userId;
+        }
+
         public GateUnit(long appid, ServerCore.Main.Server server) : base(appid, server, "GateUnit") {
             RegisterMessage(CS_GateLoginRequest.Descriptor, OnLogin);
             RegisterMessage(SC_GateLoginResponse.Descriptor, null);

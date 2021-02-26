@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Newtonsoft.Json", "external
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatServer", "src\ChatServer\ChatServer.csproj", "{F9017C1B-24C5-4B50-B930-94B82BD85FD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBStructs", "src\DBStructs\DBStructs.csproj", "{40198819-91C4-44F5-B403-FEEDF51595E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9017C1B-24C5-4B50-B930-94B82BD85FD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40198819-91C4-44F5-B403-FEEDF51595E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40198819-91C4-44F5-B403-FEEDF51595E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40198819-91C4-44F5-B403-FEEDF51595E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40198819-91C4-44F5-B403-FEEDF51595E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,6 +89,7 @@ Global
 		{1F270AAE-D3BA-48DD-AD1D-1BE7C5188321} = {C4192722-C17B-4F1A-8C93-C9716705258F}
 		{D792A26D-3E44-4495-9F68-8498B450E51B} = {C4192722-C17B-4F1A-8C93-C9716705258F}
 		{F9017C1B-24C5-4B50-B930-94B82BD85FD5} = {C2DC6611-03A1-4B7D-AE1B-C1F85ECE92BC}
+		{40198819-91C4-44F5-B403-FEEDF51595E2} = {4EC60301-5143-4373-B452-42F17224BE86}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {038EC8AE-4EF0-4352-A4AD-ECC228907A0A}
