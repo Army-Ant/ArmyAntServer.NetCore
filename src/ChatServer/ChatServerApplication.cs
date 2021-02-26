@@ -19,12 +19,6 @@ namespace ArmyAnt.ChatServer
             NormalExit = 0,
         }
 
-        private static class ServerMainAppid
-        {
-            public const long chatApp = 1001;
-            public const long huolongServer = 1010;
-        };
-
 #pragma warning disable CS0649
         [System.Serializable]
         private struct Config
@@ -83,8 +77,15 @@ namespace ArmyAnt.ChatServer
                 // Start server
                 server.Start();
 
-                var chatApp = new ServerUnits.ChatApp(ServerMainAppid.chatApp, server);
-                chatApp.TaskId = server.StartSubApplication(chatApp)[0];
+                var app = new ChatUnit(1001, server);
+                if (!server.StartSubApplication(app))
+                {
+                    server.Log(Logger.LogLevel.Fatal, logTag, "Start Chat App Failed !");
+                }
+                else
+                {
+                    server.Log(Logger.LogLevel.Info, logTag, "Chat App Started");
+                }
 
                 // Wait for server ending
                 var ret = await server.AwaitAll();

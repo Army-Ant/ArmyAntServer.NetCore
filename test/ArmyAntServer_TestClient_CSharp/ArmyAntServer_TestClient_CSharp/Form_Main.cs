@@ -26,24 +26,24 @@ namespace ArmyAntServer_TestClient_CSharp
             InitializeComponent();
             net = new Network(onReceiveCallback, onDisconnectedCallback);
 
-            loginRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoLoginRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            logoutRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoLogoutRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            sendRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoSendRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            broadcastRequestMessageCode = ArmyAntMessage.SubApps.C2SM_EchoBroadcastRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            loginRequestMessageCode = ArmyAntMessage.SubApps.CS_EchoLoginRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            logoutRequestMessageCode = ArmyAntMessage.SubApps.CS_EchoLogoutRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            sendRequestMessageCode = ArmyAntMessage.SubApps.CS_EchoSendRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            broadcastRequestMessageCode = ArmyAntMessage.SubApps.CS_EchoBroadcastRequest.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
 
-            loginResponseMessageCode = ArmyAntMessage.SubApps.SM2C_EchoLoginResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            logoutResponseMessageCode = ArmyAntMessage.SubApps.SM2C_EchoLogoutResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            errorResponseMessageCode = ArmyAntMessage.SubApps.SM2C_EchoError.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            broadcastResponseMessageCode = ArmyAntMessage.SubApps.SM2C_EchoBroadcastResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            sendResponseMessageCode = ArmyAntMessage.SubApps.SM2C_EchoSendResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
-            receiveMessageCode = ArmyAntMessage.SubApps.SM2C_EchoReceiveNotice.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            loginResponseMessageCode = ArmyAntMessage.SubApps.SC_EchoLoginResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            logoutResponseMessageCode = ArmyAntMessage.SubApps.SC_EchoLogoutResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            errorResponseMessageCode = ArmyAntMessage.SubApps.SC_EchoError.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            broadcastResponseMessageCode = ArmyAntMessage.SubApps.SC_EchoBroadcastResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            sendResponseMessageCode = ArmyAntMessage.SubApps.SC_EchoSendResponse.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
+            receiveMessageCode = ArmyAntMessage.SubApps.SC_EchoReceiveNotice.Descriptor.GetOptions().GetExtension(BaseExtensions.MsgCode);
         }
 
         private bool onReceiveCallback(int type, long appid, int messageCode, int conversationCode, int conversationStepIndex, byte[] data)
         {
             if (messageCode == loginResponseMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoLoginResponse.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoLoginResponse.Parser.ParseFrom(data);
                 if (msg.Result == 0)
                 {
                     logged = true;
@@ -62,7 +62,7 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else if (messageCode == logoutResponseMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoLogoutResponse.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoLogoutResponse.Parser.ParseFrom(data);
                 if (msg.Result == 0)
                 {
                     logged = false;
@@ -80,12 +80,12 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else if (messageCode == errorResponseMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoError.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoError.Parser.ParseFrom(data);
                 receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 发生错误! 消息" + msg.Message + Environment.NewLine;
             }
             else if (messageCode == broadcastResponseMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoBroadcastResponse.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoBroadcastResponse.Parser.ParseFrom(data);
                 if (msg.Result == 0)
                 {
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 发送广播成功!" + Environment.NewLine;
@@ -97,7 +97,7 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else if (messageCode == sendResponseMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoSendResponse.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoSendResponse.Parser.ParseFrom(data);
                 if (msg.Result == 0)
                 {
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] 向用户[" + msg.Request.Target + "]发送消息成功! 消息内容: " + msg.Request.Message + Environment.NewLine;
@@ -109,7 +109,7 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else if (messageCode == receiveMessageCode)
             {
-                var msg = ArmyAntMessage.SubApps.SM2C_EchoReceiveNotice.Parser.ParseFrom(data);
+                var msg = ArmyAntMessage.SubApps.SC_EchoReceiveNotice.Parser.ParseFrom(data);
                 if (msg.IsBroadcast)
                 {
                     receiveTextBox.Text += "[" + DateTime.Now.ToLongTimeString() + "] [" + msg.From + "] [广播] " + msg.Message + Environment.NewLine;
@@ -192,7 +192,7 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else
             {
-                connected = await net.ConnectToServer(IPAddress.Loopback, cbWebsocket.Checked ? 8080 : 14774, cbWebsocket.Checked);
+                connected = await net.ConnectToServer(IPAddress.Loopback, cbWebsocket.Checked ? 14742 : 14712, cbWebsocket.Checked);
                 if (connected)
                 {
                     btnConnectinout.Text = "断开连接";
@@ -213,7 +213,7 @@ namespace ArmyAntServer_TestClient_CSharp
 
         private async void btnSend_ClickAsync(object sender, EventArgs e)
         {
-            var request = new ArmyAntMessage.SubApps.C2SM_EchoSendRequest();
+            var request = new ArmyAntMessage.SubApps.CS_EchoSendRequest();
             request.Target = targetUserTextBox.Text;
             request.Message = sendTextBox.Text;
 
@@ -226,7 +226,7 @@ namespace ArmyAntServer_TestClient_CSharp
 
         private async void btnBroadcast_Click(object sender, EventArgs e)
         {
-            var request = new ArmyAntMessage.SubApps.C2SM_EchoBroadcastRequest();
+            var request = new ArmyAntMessage.SubApps.CS_EchoBroadcastRequest();
             request.Message = sendTextBox.Text;
 
             var ms = new System.IO.MemoryStream();
@@ -240,7 +240,7 @@ namespace ArmyAntServer_TestClient_CSharp
         {
             if (logged)
             {
-                var request = new ArmyAntMessage.SubApps.C2SM_EchoLogoutRequest();
+                var request = new ArmyAntMessage.SubApps.CS_EchoLogoutRequest();
                 request.UserName = loginNameTextBox.Text;
 
                 var ms = new System.IO.MemoryStream();
@@ -251,7 +251,7 @@ namespace ArmyAntServer_TestClient_CSharp
             }
             else
             {
-                var request = new ArmyAntMessage.SubApps.C2SM_EchoLoginRequest();
+                var request = new ArmyAntMessage.SubApps.CS_EchoLoginRequest();
                 request.UserName = loginNameTextBox.Text;
 
                 var ms = new System.IO.MemoryStream();

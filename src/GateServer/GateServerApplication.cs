@@ -19,12 +19,6 @@ namespace ArmyAnt.GateServer
             NormalExit = 0,
         }
 
-        private static class ServerMainAppid
-        {
-            public const long chatApp = 1001;
-            public const long huolongServer = 1010;
-        };
-
 #pragma warning disable CS0649
         [System.Serializable]
         private struct Config
@@ -82,6 +76,16 @@ namespace ArmyAnt.GateServer
 
                 // Start server
                 server.Start();
+
+                var app = new GateUnit(1000, server);
+                if (!server.StartSubApplication(app))
+                {
+                    server.Log(Logger.LogLevel.Fatal, logTag, "Start Gate App Failed !");
+                }
+                else
+                {
+                    server.Log(Logger.LogLevel.Info, logTag, "Gate App Started");
+                }
 
                 // Wait for server ending
                 var ret = await server.AwaitAll();

@@ -27,4 +27,4 @@
 
 set dir=%1
 cd %dir%
-compile_protobuf.bat
+:: compile_protobuf.bat

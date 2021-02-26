@@ -82,7 +82,7 @@ namespace ArmyAnt.DBProxyServer {
             return names;
         }
 
-        public override string[] getTableAllFields(string table) {
+        public override string[] GetTableAllFields(string table) {
             var res = Query("show columns from " + table);
             var names = new string[res.Height];
             for(var i = 0; i < res.Height; ++i) {

@@ -89,17 +89,18 @@ namespace ArmyAnt.ServerCore.Main {
             Log(Logger.LogLevel.Info, LoggerTag, "Server stopped");
         }
 
-        public long[] StartSubApplication(params SubUnit.ISubUnit[] apps) {
-            var ret = new long[apps.Length];
-            for(var i = 0; i < apps.Length; ++i) {
-                appList.Add(apps[i].AppId, apps[i]);
-                EventManager.OnUserSessionLogin += apps[i].OnUserSessionLogin;
-                EventManager.OnUserSessionLogout += apps[i].OnUserSessionLogout;
-                EventManager.OnUserSessionDisconnected += apps[i].OnUserSessionDisconnected;
-                EventManager.OnUserSessionReconnected += apps[i].OnUserSessionReconnected;
-                EventManager.OnUserSessionShutdown += apps[i].OnUserSessionShutdown;
-                ret[i] = EventManager.AddSubApplicationTask(apps[i]);
-                apps[i].Start();
+        public bool StartSubApplication(SubUnit.ISubUnit app)
+        {
+            appList.Add(app.AppId, app);
+            EventManager.OnUserSessionLogin += app.OnUserSessionLogin;
+            EventManager.OnUserSessionLogout += app.OnUserSessionLogout;
+            EventManager.OnUserSessionDisconnected += app.OnUserSessionDisconnected;
+            EventManager.OnUserSessionReconnected += app.OnUserSessionReconnected;
+            EventManager.OnUserSessionShutdown += app.OnUserSessionShutdown;
+            var ret = app.Start();
+            if (ret)
+            {
+                app.TaskId = EventManager.AddSubApplicationTask(app);
             }
             return ret;
         }
