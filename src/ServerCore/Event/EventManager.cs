@@ -9,7 +9,7 @@ using static ArmyAnt.Utilities;
 namespace ArmyAnt.ServerCore.Event {
     #region delegates
     public delegate bool OnKeyNotFoundLocalEvent(int _event, LocalEventArg data);
-    public delegate void OnKeyNotFoundNetworkMessage(int _event, SocketHeadExtend extend, IMessage msg);
+    public delegate void OnKeyNotFoundUDPMessage(int _event, SocketHeadExtend extend, IMessage msg);
     public delegate void OnUnknownEvent(int _event, Type arrayType, params object[] data);
     #endregion
 
@@ -22,7 +22,8 @@ namespace ArmyAnt.ServerCore.Event {
     }
 
     public class EventManager : Thread.TaskPool<int>.ITaskQueue {
-        public EventManager() {
+        public EventManager()
+        {
             selfId = taskPool.AddTaskQueue(this);
         }
 
@@ -35,9 +36,9 @@ namespace ArmyAnt.ServerCore.Event {
                 }
             } else if (data[0] is SocketHeadExtend extend && data.Length == 2 && data[1] is IMessage msg) {
                 try {
-                    networkEventPool[_event]?.Invoke(_event, extend, msg);
+                    udpMessagePool[_event]?.Invoke(_event, extend, msg);
                 } catch (KeyNotFoundException) {
-                    OnKeyNotFoundNetworkMessage?.Invoke(_event, extend, msg);
+                    OnKeyNotFoundUDPMessage?.Invoke(_event, extend, msg);
                 }
             } else if (data[0] is long user && data.Length == 2 && data[1] is long check && check == 0) {
                 switch ((SpecialEvent)_event) {
@@ -134,30 +135,30 @@ namespace ArmyAnt.ServerCore.Event {
 
         #endregion
 
-        #region Network message
+        #region UDP message
 
-        public void AddNetworkMessageListener(int code, Action<int, SocketHeadExtend, IMessage> _event) {
+        public void AddUDPMessageListener(int code, Action<int, SocketHeadExtend, IMessage> _event) {
             IsNotNull(_event);
-            lock (networkEventPool) {
+            lock (udpMessagePool) {
                 try {
-                    var tar = networkEventPool[code];
+                    var tar = udpMessagePool[code];
                     tar.Add(_event);
                 } catch (KeyNotFoundException) {
                     var tar = new EventGroup<SocketHeadExtend, IMessage>();
                     tar.Add(_event);
-                    networkEventPool.Add(code, tar);
+                    udpMessagePool.Add(code, tar);
                 }
             }
         }
-        public void RemoveNetworkMessageListener(int code, Action<int, SocketHeadExtend, IMessage> _event) {
+        public void RemoveUDPMessageListener(int code, Action<int, SocketHeadExtend, IMessage> _event) {
             IsNotNull(_event);
-            lock (networkEventPool) {
-                networkEventPool[code].Remove(_event);
+            lock (udpMessagePool) {
+                udpMessagePool[code].Remove(_event);
             }
         }
 
-        public bool DispatchNetworkMessage(int code, SocketHeadExtend extend, IMessage msg) => taskPool.EnqueueTaskTo(selfId, code, extend, msg);
-
+        public bool DispatchHTTPMessage(int code, SocketHeadExtend extend, IMessage msg) => taskPool.EnqueueTaskTo(selfId, code, extend, msg);
+        public bool DispatchUDPMessage(int code, SocketHeadExtend extend, IMessage msg) => taskPool.EnqueueTaskTo(selfId, code, extend, msg);
         public bool DispatchNetworkMessage(int code, long userId, SocketHeadExtend extend, IMessage msg) => taskPool.EnqueueTaskTo(userId, code, extend, msg);
         
 
@@ -170,7 +171,7 @@ namespace ArmyAnt.ServerCore.Event {
         public event OnUserSessionDisconnected OnUserSessionDisconnected;
         public event OnUserSessionReconnected OnUserSessionReconnected;
         public event OnKeyNotFoundLocalEvent OnKeyNotFoundLocalEvent;
-        public event OnKeyNotFoundNetworkMessage OnKeyNotFoundNetworkMessage;
+        public event OnKeyNotFoundUDPMessage OnKeyNotFoundUDPMessage;
         public event OnUnknownEvent OnUnknownEvent;
         #endregion
 
@@ -197,6 +198,6 @@ namespace ArmyAnt.ServerCore.Event {
         private readonly long selfId;
         private readonly Thread.TaskPool<int> taskPool = new Thread.TaskPool<int>();
         private readonly IDictionary<int, EventGroup<LocalEventArg>> localEventPool = new Dictionary<int, EventGroup<LocalEventArg>>();
-        private readonly IDictionary<int, EventGroup<SocketHeadExtend, IMessage>> networkEventPool = new Dictionary<int, EventGroup<SocketHeadExtend, IMessage>>();
+        private readonly IDictionary<int, EventGroup<SocketHeadExtend, IMessage>> udpMessagePool = new Dictionary<int, EventGroup<SocketHeadExtend, IMessage>>();
     }
 }

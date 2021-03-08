@@ -53,6 +53,20 @@ namespace ArmyAnt.GateServer
 
         private void OnLogin(int conversationCode, EndPointTask user, IMessage msg)
         {
+            var request = msg as CS_GateLoginRequest;
+            switch (request.Type)
+            {
+                case LoginType.SuperManager:
+                    break;
+                case LoginType.Guest:
+                    break;
+                case LoginType.InnerAccount:
+                    break;
+                case LoginType.ThirdPartyAccount:
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void OnLogout(int conversationCode, EndPointTask user, IMessage msg)

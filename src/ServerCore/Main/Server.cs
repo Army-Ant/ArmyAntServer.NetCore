@@ -149,7 +149,7 @@ namespace ArmyAnt.ServerCore.Main {
             return 0;
         }
 
-        public void Log(System.Text.Encoding encoding, Logger.LogLevel lv, string Tag, params object[] content) {
+        public void Log(Encoding encoding, Logger.LogLevel lv, string Tag, params object[] content) {
             logger.WriteLine(encoding, lv, " [ ", Tag, " ] ", content);
         }
 
@@ -157,10 +157,17 @@ namespace ArmyAnt.ServerCore.Main {
             logger.WriteLine(lv, " [ ", Tag, " ] ", content);
         }
 
-        public void Send<T>(MessageType msgType, NetworkType type, long userId, SocketHeadExtend extend, T msg) where T : Google.Protobuf.IMessage<T>, new() {
+        public void Send<T>(MessageType msgType, NetworkType type, long userId, SocketHeadExtend extend, T msg) where T : IMessage<T>, new() {
             int index = 0;
             byte[] sending;
-            var user = EventManager.GetUserSession(userId);
+            if (msgType == MessageType.JsonString)
+            {
+                sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
+            }
+            else
+            {
+                sending = msgHelper.SerializeBinary(extend, msg);
+            }
             switch (type)
             {
                 case NetworkType.Tcp:
@@ -172,14 +179,6 @@ namespace ArmyAnt.ServerCore.Main {
                             return;
                         }
                         index = tcpSocketIndexList[userId];
-                    }
-                    if (msgType == MessageType.JsonString)
-                    {
-                        sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
-                    }
-                    else
-                    {
-                        sending = msgHelper.SerializeBinary(extend, msg);
                     }
                     sendingTasks.Add(tcpServer.Send(index, sending));
                     break;
@@ -193,29 +192,44 @@ namespace ArmyAnt.ServerCore.Main {
                         }
                         index = webSocketIndexList[userId];
                     }
-                    if (msgType == MessageType.JsonString)
-                    {
-                        sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
-                    }
-                    else
-                    {
-                        sending = msgHelper.SerializeBinary(extend, msg);
-                    }
                     sendingTasks.Add(httpServer.Send(index, sending));
+                    break;
+                default:
+                    Log(Logger.LogLevel.Error, LoggerTag, "Wrong NetworkType value to send message: ", type);
                     break;
             }
         }
 
-        private bool OnTcpServerConnected(int index, IPEndPoint point) {
-            lock(tcpSocketUserList) {
-                if(tcpSocketUserList.ContainsKey(index)) {
+        public void SendUDP<T>(MessageType msgType, IPEndPoint target, SocketHeadExtend extend, T msg) where T : IMessage<T>, new()
+        {
+            byte[] sending;
+            if (msgType == MessageType.JsonString)
+            {
+                sending = Encoding.Default.GetBytes(msgHelper.SerializeJson(extend, msg));
+            }
+            else
+            {
+                sending = msgHelper.SerializeBinary(extend, msg);
+            }
+            sendingTasks.Add(udpListener.Send(target, sending));
+        }
+
+        private bool OnTcpServerConnected(int index, IPEndPoint point)
+        {
+            lock (tcpSocketUserList)
+            {
+                if (tcpSocketUserList.ContainsKey(index))
+                {
                     Log(Logger.LogLevel.Error, LoggerTag, "New TCP client connected into , but the same IP (", point.Address.ToString(), ") and port (", point.Port, ") connection has found ! Please check the code");
                     return false;
-                } else {
+                }
+                else
+                {
                     var user = new Event.EndPointTask(this, NetworkType.Tcp);
                     user.ID = EventManager.AddUserSession(user);
                     Log(Logger.LogLevel.Verbose, LoggerTag, "New TCP client connected , IP: ", point.Address.ToString(), ", port: ", point.Port, ", has record to client index: ", user.ID);
-                    lock(tcpSocketIndexList) {
+                    lock (tcpSocketIndexList)
+                    {
                         tcpSocketUserList.Add(index, user);
                         tcpSocketIndexList.Add(user.ID, index);
                     }
@@ -255,9 +269,16 @@ namespace ArmyAnt.ServerCore.Main {
             OnMessage(userId, extend, msg, msgType);
         }
 
-        private void OnUdpReceived(IPEndPoint ep, byte[] data) { /* TODO */ }
+        private void OnUdpReceived(IPEndPoint ep, byte[] data) {
+            var (extend, msg, msgType) = msgHelper.Deserialize(options.udpAllowJson, data);
+            Log(Logger.LogLevel.Verbose, LoggerTag, "Received UDP message from ip: ", ep.Address.ToString(), ", port: " + ep.Port);
+            EventManager.DispatchUDPMessage(MessageBaseHead.GetNetworkMessageCode(msg), extend, msg);
 
-        private void OnHttpServerReceived(HttpListenerRequest request, HttpListenerResponse response, System.Security.Principal.IPrincipal user) { /* TODO */ }
+        }
+
+        private void OnHttpServerReceived(HttpListenerRequest request, HttpListenerResponse response, System.Security.Principal.IPrincipal user) {
+            /* TODO */ 
+        }
 
         private bool OnWebsocketServerConnected(int index, IPEndPoint point) {
             lock(webSocketUserList) {
