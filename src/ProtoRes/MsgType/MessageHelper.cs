@@ -14,8 +14,8 @@ namespace ArmyAnt.MsgType
     {
         public MessageHelper()
         {
-            JsonParser.Settings.Default.IgnoreUnknownFields = true;
-            JsonFormatter.Settings.Default.FormatDefaultValues = true;
+            jsonParser = new JsonParser(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
+            jsonFormatter = new JsonFormatter(JsonFormatter.Settings.Default.WithFormatDefaultValues(true));
         }
 
         public void RegisterMessage(Google.Protobuf.Reflection.MessageDescriptor descriptor)
@@ -98,12 +98,13 @@ namespace ArmyAnt.MsgType
 
         private (SocketHeadExtend extend, IMessage msg) DeserializeJson(string json)
         {
-            var extend = SocketHeadExtend.Parser.ParseJson(json);
-            var msg = messageTypeDic[extend.MessageCode].Parser.ParseJson(json);
+            var extend = SocketHeadExtend.Parser.ParseJson(json, jsonParser);
+            var msg = messageTypeDic[extend.MessageCode].Parser.ParseJson(json, jsonParser);
             return (extend, msg);
         }
 
         private readonly IDictionary<int, Google.Protobuf.Reflection.MessageDescriptor> messageTypeDic = new Dictionary<int, Google.Protobuf.Reflection.MessageDescriptor>();
-
+        private JsonParser jsonParser;
+        private JsonFormatter jsonFormatter;
     }
 }
