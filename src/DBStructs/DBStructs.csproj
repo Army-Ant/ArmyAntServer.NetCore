@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <RootNamespace>DBStructs</RootNamespace>
     <Platforms>AnyCPU</Platforms>
+    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
 

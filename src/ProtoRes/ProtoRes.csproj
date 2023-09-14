@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <RootNamespace>ArmyAntMessage</RootNamespace>
     <Platforms>AnyCPU</Platforms>
+    <Configurations>Release;Debug</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -14,13 +15,12 @@
     <OutputPath>$(SolutionDir)bin</OutputPath>
   </PropertyGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="$(SolutionDir)scripts\build_start.bat $(SolutionDir)scripts" />
-  </Target>
-
   <ItemGroup>
-    <ProjectReference Include="..\..\external\Newtonsoft.Json\Src\Newtonsoft.Json\Newtonsoft.Json.csproj" />
-    <ProjectReference Include="..\..\external\protobuf\csharp\src\Google.Protobuf\Google.Protobuf.csproj" />
+    <PackageReference Include="Google.Protobuf" Version="3.24.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <!--<Exec Command="$(SolutionDir)scripts\build_start.bat $(SolutionDir)scripts" />-->
+  </Target>
 
 </Project>
