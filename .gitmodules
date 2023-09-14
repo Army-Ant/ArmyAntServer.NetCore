@@ -4,20 +4,9 @@
 [submodule "res"]
 	path = res
 	url = https://github.com/Army-Ant/ArmyAntServerResources.git
-[submodule "external/protobuf"]
-	path = external/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
-	ignore = dirty
-[submodule "external/MySqlConnector"]
-	path = external/MySqlConnector
-	url = https://github.com/mysql-net/MySqlConnector.git
-	ignore = dirty
 [submodule "external/ArmyAnt.js"]
 	path = external/ArmyAnt.js
 	url = https://github.com/Army-Ant/ArmyAnt.js.git
-[submodule "external/Newtonsoft.Json"]
-	path = external/Newtonsoft.Json
-	url = https://github.com/JamesNK/Newtonsoft.Json.git
 [submodule "external/closure-library"]
 	path = external/closure-library
 	url = https://github.com/google/closure-library.git
