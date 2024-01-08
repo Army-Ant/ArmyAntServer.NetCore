@@ -1,12 +1,16 @@
 [submodule "external/ArmyAnt.Net"]
 	path = external/ArmyAnt.Net
 	url = https://github.com/Army-Ant/ArmyAnt.Net
+	branch = master
 [submodule "res"]
 	path = res
 	url = https://github.com/Army-Ant/ArmyAntServerResources.git
+	branch = master
 [submodule "external/ArmyAnt.js"]
 	path = external/ArmyAnt.js
 	url = https://github.com/Army-Ant/ArmyAnt.js.git
+	branch = master
 [submodule "external/closure-library"]
 	path = external/closure-library
 	url = https://github.com/google/closure-library.git
+	branch = master
